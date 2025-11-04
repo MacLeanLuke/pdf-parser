@@ -1,0 +1,81 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createHash } from "crypto";
+import { parsePDF } from "@/lib/pdf-parser";
+import { extractEligibilityFromText } from "@/lib/eligibility-extractor";
+import { db } from "@/db";
+import { eligibilityDocuments } from "@/db/schema";
+
+const MAX_RAW_TEXT_LENGTH = 50_000;
+
+export async function POST(request: NextRequest) {
+  try {
+    const formData = await request.formData();
+    const file = formData.get("file");
+
+    if (!(file instanceof File)) {
+      return NextResponse.json(
+        { error: "A single PDF file is required." },
+        { status: 400 }
+      );
+    }
+
+    if (file.type && file.type !== "application/pdf") {
+      return NextResponse.json(
+        { error: "Only PDF files are supported." },
+        { status: 400 }
+      );
+    }
+
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    if (buffer.length === 0) {
+      return NextResponse.json(
+        { error: "Uploaded file is empty." },
+        { status: 400 }
+      );
+    }
+
+    const hash = createHash("sha256").update(buffer).digest("hex");
+
+    const { text } = await parsePDF(buffer, { cleanText: true });
+
+    const eligibility = await extractEligibilityFromText(text);
+
+    const truncatedRawText =
+      text.length > MAX_RAW_TEXT_LENGTH
+        ? `${text.slice(0, MAX_RAW_TEXT_LENGTH)}\n...[truncated]`
+        : text;
+
+    const [record] = await db
+      .insert(eligibilityDocuments)
+      .values({
+        fileName: file.name,
+        fileSize: buffer.length,
+        mimeType: file.type || "application/pdf",
+        rawText: truncatedRawText,
+        rawEligibilityText: eligibility.rawEligibilityText,
+        eligibilityJson: eligibility,
+        programName: eligibility.programName,
+        hash,
+      })
+      .returning();
+
+    return NextResponse.json({
+      id: record.id,
+      programName: record.programName,
+      rawEligibilityText: record.rawEligibilityText,
+      eligibility,
+      createdAt: record.createdAt,
+      fileName: record.fileName,
+      fileSize: record.fileSize,
+      mimeType: record.mimeType,
+    });
+  } catch (error) {
+    console.error("Failed to parse eligibility PDF", error);
+    return NextResponse.json(
+      { error: "Failed to analyze PDF. Please try again." },
+      { status: 500 }
+    );
+  }
+}
