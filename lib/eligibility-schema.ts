@@ -34,7 +34,10 @@ export const eligibilitySchema = z.object({
     .default(null),
   rawEligibilityText: z.string().min(1, "rawEligibilityText must include text"),
   population: z.array(z.enum(populationOptions)).default([]),
-  genderRestriction: z.enum(genderRestrictions).default("any"),
+  genderRestriction: z
+    .enum(genderRestrictions)
+    .nullish()
+    .transform((value): (typeof genderRestrictions)[number] => value ?? "any"),
   requirements: z.array(z.enum(requirementOptions)).default([]),
   locationConstraints: z.array(z.string().trim().min(1)).default([]),
   maxStayDays: z.number().int().nonnegative().nullable().default(null),
@@ -49,4 +52,4 @@ export const eligibilitySchema = z.object({
 
 export type Eligibility = z.infer<typeof eligibilitySchema>;
 
-export const eligibilitySystemPrompt = `You are an expert case manager who extracts structured eligibility rules from program PDFs related to homeless-services and housing assistance. Provided the raw PDF text, identify only directly-stated eligibility information. If any field is not explicitly mentioned, return null for single values or [] for arrays. Do not infer details beyond what is present in the text. Provide the exact excerpt that states eligibility in rawEligibilityText.`;
+export const eligibilitySystemPrompt = `You are an expert case manager who extracts structured eligibility rules from program PDFs related to homeless-services and housing assistance. Provided the raw PDF text, identify only directly-stated eligibility information. If any field is not explicitly mentioned, return null for single values or [] for arrays. For genderRestriction, use "any" when no restriction is stated. Do not infer details beyond what is present in the text. Provide the exact excerpt that states eligibility in rawEligibilityText.`;
