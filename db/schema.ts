@@ -26,6 +26,9 @@ export const eligibilityDocuments = pgTable("eligibility_documents", {
   eligibilityJson: jsonb("eligibility_json").notNull(),
   programName: varchar("program_name", { length: 255 }),
   hash: varchar("hash", { length: 128 }),
+  sourceType: text("source_type").notNull().default("pdf"),
+  sourceUrl: text("source_url"),
+  pageTitle: text("page_title"),
 });
 
 export type EligibilityDocument = typeof eligibilityDocuments.$inferSelect;

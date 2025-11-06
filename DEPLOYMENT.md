@@ -29,10 +29,10 @@ OPENAI_MODEL=gpt-4o-mini
 
 1. Provision a PostgreSQL database.
 2. Ensure extensions `pgcrypto` (for `gen_random_uuid`) is available.
-3. Run the Drizzle migration against the database:
+3. Run the Drizzle migrations against the database:
 
    ```bash
-   npx drizzle-kit push
+   npm run db:migrate
    ```
 
    The migration files live in the `drizzle/` directory and create the `eligibility_documents` table.
@@ -55,5 +55,5 @@ For platforms such as Fly.io, Render, or Railway:
 ## Operational Notes
 
 - The API routes connect to the database using a pooled connection with the `pg` driver. Tune pool settings in `db/index.ts` if your platform enforces strict connection limits.
-- Large PDFs are truncated to 50k characters before being sent to OpenAI to manage prompt size.
-- Logs from API routes (`/api/parse-eligibility` and `/api/history`) are available through the platform’s standard logging interface.
+- Large PDFs are truncated to 50k characters and web pages to roughly 20k characters before being sent to OpenAI to manage prompt size.
+- Logs from API routes (`/api/parse-eligibility`, `/api/parse-url`, and `/api/eligibility-records`) are available through the platform’s standard logging interface.

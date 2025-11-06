@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { parsePDF } from "@/lib/pdf-parser";
-import { extractEligibilityFromText } from "@/lib/eligibility-extractor";
+import { extractEligibility } from "@/lib/eligibility-extractor";
 import { db } from "@/db";
 import { eligibilityDocuments } from "@/db/schema";
 
 const MAX_RAW_TEXT_LENGTH = 50_000;
+const RESPONSE_SNIPPET_LENGTH = 2_000;
+
+export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,14 +41,23 @@ export async function POST(request: NextRequest) {
 
     const hash = createHash("sha256").update(buffer).digest("hex");
 
-    const { text } = await parsePDF(buffer, { cleanText: true });
+    const { text, metadata } = await parsePDF(buffer, { cleanText: true });
 
-    const eligibility = await extractEligibilityFromText(text);
+    const eligibility = await extractEligibility({
+      text,
+      sourceType: "pdf",
+      metadata: {
+        fileName: file.name,
+        title: metadata?.title ?? null,
+      },
+    });
 
     const truncatedRawText =
       text.length > MAX_RAW_TEXT_LENGTH
         ? `${text.slice(0, MAX_RAW_TEXT_LENGTH)}\n...[truncated]`
         : text;
+
+    const rawTextSnippet = createSnippet(truncatedRawText, RESPONSE_SNIPPET_LENGTH);
 
     const [record] = await db
       .insert(eligibilityDocuments)
@@ -58,18 +70,22 @@ export async function POST(request: NextRequest) {
         eligibilityJson: eligibility,
         programName: eligibility.programName,
         hash,
+        sourceType: "pdf",
+        sourceUrl: null,
+        pageTitle: metadata?.title ?? null,
       })
       .returning();
 
     return NextResponse.json({
       id: record.id,
+      sourceType: record.sourceType,
+      sourceUrl: record.sourceUrl,
+      pageTitle: record.pageTitle,
       programName: record.programName,
       rawEligibilityText: record.rawEligibilityText,
       eligibility,
       createdAt: record.createdAt,
-      fileName: record.fileName,
-      fileSize: record.fileSize,
-      mimeType: record.mimeType,
+      rawTextSnippet,
     });
   } catch (error) {
     console.error("Failed to parse eligibility PDF", error);
@@ -78,4 +94,12 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+function createSnippet(text: string, maxLength: number) {
+  if (text.length <= maxLength) {
+    return text;
+  }
+
+  return `${text.slice(0, maxLength)}…`;
 }

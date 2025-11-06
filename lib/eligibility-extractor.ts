@@ -4,12 +4,28 @@ import { eligibilitySchema, eligibilitySystemPrompt } from "./eligibility-schema
 
 const MODEL_NAME = process.env.OPENAI_MODEL ?? "gpt-4.1";
 
-export async function extractEligibilityFromText(pdfText: string) {
+export type EligibilitySourceType = "pdf" | "web";
+
+type ExtractEligibilityOptions = {
+  text: string;
+  sourceType: EligibilitySourceType;
+  metadata?: {
+    fileName?: string | null;
+    url?: string | null;
+    title?: string | null;
+  };
+  maxCharacters?: number;
+};
+
+export async function extractEligibility(options: ExtractEligibilityOptions) {
   if (!process.env.OPENAI_API_KEY) {
     throw new Error("OPENAI_API_KEY is not set");
   }
 
-  const sanitizedText = sanitizePdfText(pdfText);
+  const sanitizedText = sanitizeText(
+    options.text,
+    options.maxCharacters ?? (options.sourceType === "web" ? 20_000 : 50_000),
+  );
 
   const { object } = await generateObject({
     model: openai(MODEL_NAME),
@@ -21,7 +37,7 @@ export async function extractEligibilityFromText(pdfText: string) {
       },
       {
         role: "user",
-        content: buildUserPrompt(sanitizedText),
+        content: buildUserPrompt(options, sanitizedText),
       },
     ],
   });
@@ -29,24 +45,59 @@ export async function extractEligibilityFromText(pdfText: string) {
   return object;
 }
 
-function buildUserPrompt(text: string) {
-  return `You are given the raw text of a PDF that describes a program for homeless-services or housing support.
-Your task is to extract eligibility information only using what is explicitly stated.
+export async function extractEligibilityFromText(pdfText: string) {
+  return extractEligibility({ text: pdfText, sourceType: "pdf" });
+}
 
-Return a JSON object that matches the provided schema. If a field is missing from the document, set it to null (for single values) or [] (for arrays). The rawEligibilityText should be the exact excerpt from the document that contains the eligibility rules.
+function buildUserPrompt(
+  options: ExtractEligibilityOptions,
+  sanitizedText: string,
+) {
+  const meta = formatMetadata(options);
+  const sourceLabel =
+    options.sourceType === "pdf" ? "a PDF document" : "a website page";
 
-PDF_TEXT:
+  return `You are given text extracted from ${sourceLabel} describing a program for homeless-services or housing support.
+
+Metadata:
+${meta}
+
+Return a JSON object that matches the provided schema. If a field is missing from the document, set it to null (for single values) or [] (for arrays). The rawEligibilityText should be the exact excerpt from the material that contains the eligibility rules.
+
+SOURCE_TEXT:
 """
-${text}
+${sanitizedText}
 """`;
 }
 
-const MAX_CHARACTERS = 50_000;
+function formatMetadata(options: ExtractEligibilityOptions) {
+  const parts: string[] = [
+    `Source type: ${options.sourceType === "pdf" ? "PDF" : "Web page"}.`,
+  ];
 
-function sanitizePdfText(text: string) {
-  if (text.length <= MAX_CHARACTERS) {
+  if (options.metadata?.fileName) {
+    parts.push(`File name: ${options.metadata.fileName}`);
+  }
+
+  if (options.metadata?.title) {
+    parts.push(`Title: ${options.metadata.title}`);
+  }
+
+  if (options.metadata?.url) {
+    parts.push(`URL: ${options.metadata.url}`);
+  }
+
+  if (parts.length === 0) {
+    return "None provided.";
+  }
+
+  return parts.join("\n");
+}
+
+function sanitizeText(text: string, maxCharacters: number) {
+  if (text.length <= maxCharacters) {
     return text;
   }
 
-  return text.slice(0, MAX_CHARACTERS);
+  return text.slice(0, maxCharacters);
 }
