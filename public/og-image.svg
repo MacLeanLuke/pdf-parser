@@ -1,23 +1,30 @@
 <svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#0F172A"/>
-      <stop offset="1" stop-color="#1E293B"/>
+      <stop offset="0" stop-color="#F8FAFC"/>
+      <stop offset="1" stop-color="#E2E8F0"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="0" y2="120" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2563EB"/>
+      <stop offset="1" stop-color="#10B981"/>
     </linearGradient>
   </defs>
   <rect width="1200" height="630" fill="url(#bg)"/>
-  <rect x="80" y="120" width="1040" height="390" rx="40" fill="rgba(15,23,42,0.6)" stroke="rgba(203,213,225,0.2)" stroke-width="2"/>
-  <g transform="translate(140 200)">
-    <rect width="72" height="72" rx="20" fill="rgba(37,99,235,0.85)"/>
-    <path d="M24 38L33 47L52 26" stroke="#F8FAFC" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <g transform="translate(120 150)">
+    <rect width="140" height="140" rx="36" fill="url(#accent)"/>
+    <path d="M70 30L36 55.5V110H104V55.5L70 30Z" stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M44 78C44 73.0294 48.0294 69 53 69C55.5777 69 57.9649 70.2584 59.5 72.3561C61.0351 70.2584 63.4223 69 66 69C70.9706 69 75 73.0294 75 78C75 86.5 59.5 98 59.5 98C59.5 98 44 86.5 44 78Z" fill="#F8FAFC" stroke="#F8FAFC" stroke-width="2" stroke-linejoin="round"/>
   </g>
-  <text x="240" y="260" fill="#F8FAFC" font-family="'IBM Plex Serif', Georgia, serif" font-size="80" font-weight="600">
-    Eligibility Finder
+  <text x="300" y="255" fill="#0F172A" font-family="'IBM Plex Serif', Georgia, serif" font-size="72" font-weight="600">
+    Mercy Networks
   </text>
-  <text x="240" y="330" fill="#93C5FD" font-family="'Inter', sans-serif" font-size="30" font-weight="500">
-    Clarity from complexity — faster eligibility for everyone.
+  <text x="300" y="315" fill="#2563EB" font-family="'Inter', sans-serif" font-size="32" font-weight="600">
+    Where help finds you.
   </text>
-  <text x="240" y="400" fill="#CBD5E1" font-family="'Inter', sans-serif" font-size="24" font-weight="400">
-    Upload program PDFs or analyze public websites to unlock structured insights.
+  <text x="300" y="370" fill="#1E293B" font-family="'Inter', sans-serif" font-size="24" font-weight="400">
+    Connecting people in need with shelters, meals, housing, and compassionate support.
+  </text>
+  <text x="300" y="430" fill="#374151" font-family="'Inter', sans-serif" font-size="20" font-weight="400">
+    Built for outreach teams and the communities they serve.
   </text>
 </svg>

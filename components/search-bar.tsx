@@ -36,8 +36,8 @@ export function SearchBar({
         <Input
           value={query}
           onChange={(event) => onChange(event.target.value)}
-          placeholder="Search for a shelter, program, or describe what you need…"
-          aria-label="Search for shelter, food, or other support services"
+          placeholder="Search for shelter, food, housing, or describe what you need…"
+          aria-label="Search for shelter, food, housing, or other support services"
           className="h-14 rounded-2xl border-brand-border bg-brand-background pl-12 text-base font-medium text-brand-heading placeholder:text-brand-muted"
         />
       </div>
@@ -65,7 +65,7 @@ export function SearchBar({
             ) : (
               <>
                 <Search className="h-4 w-4" aria-hidden="true" />
-                Search for help
+                Find Help
               </>
             )}
           </Button>

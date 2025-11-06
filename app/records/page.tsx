@@ -181,8 +181,8 @@ export default function RecordsPage() {
             </div>
           ) : records.length === 0 ? (
             <div className="rounded-2xl border border-brand-border bg-white px-4 py-6 text-sm text-brand-muted">
-              No records found yet. Run a search or ingest a new program from the home
-              page.
+              No services saved yet. Try a new search or add a shelter, program, or
+              resource from the home page so others can find it next time.
             </div>
           ) : (
             <div className="grid gap-3">

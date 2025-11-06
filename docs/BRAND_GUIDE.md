@@ -1,26 +1,38 @@
-# Eligibility Finder – Brand Guide
+# Mercy Networks – Brand Guide
 
 ## Identity
 
-- **Brand Name:** Eligibility Finder  
-- **Tagline:** “Clarity from complexity — faster eligibility for everyone.”
-- **Voice:** Trustworthy, human-centered, efficient, and accessible. We design for caseworkers and agencies supporting people experiencing homelessness.
+- **Brand Name:** Mercy Networks  
+- **Product Descriptor:** Eligibility Finder (internal/product view only)  
+- **Tagline:** “Where help finds you.”  
+- **Mission:** To make finding and giving help as simple as asking for it.  
+- **Voice:** Warm, clear, compassionate. We speak with dignity to people who need shelter, food, care, or long-term support, and to the caseworkers and volunteers who serve them.
+
+## Brand Pillars
+
+1. **Compassion made simple** – Every experience should feel calm, human, and easy to act on.  
+2. **Connection over complexity** – We bridge people, programs, and front-line teams through clarity.  
+3. **Shared progress** – When someone adds a service, the whole network benefits.
 
 ## Color Palette
 
 | Role | Hex | Tailwind Token | Usage |
 | --- | --- | --- | --- |
-| Primary Blue | `#2563EB` | `brand.blue` | CTAs, highlights, focus states |
-| Midnight Navy | `#0F172A` | `brand.navy` | Page backgrounds, header |
-| Slate Gray | `#1E293B` | `brand.slate` | Cards, secondary surfaces |
-| Cool Gray | `#CBD5E1` | `brand.gray` | Body text, borders, subtle UI |
-| Soft White | `#F8FAFC` | `brand.white` | Contrast text, “light” surfaces |
-| Accent Green | `#10B981` | `brand.green` | Success, confirmations |
-| Accent Orange | `#F97316` | `brand.orange` | Warnings, in-progress states |
+| Trust Blue | `#2563EB` | `brand.blue` | Primary actions, links, highlights |
+| Mercy Green | `#10B981` | `brand.green` | Success, compassionate emphasis |
+| Slate | `#1E293B` | `brand.slate` | Headings, key text on light backgrounds |
+| Soft Gray | `#CBD5E1` | `brand.gray` | Borders, secondary text, dividers |
+| Soft White | `#F8FAFC` | `brand.white` | Default page background |
+| Deep Navy | `#0F172A` | `brand.navy` | Accent text or icons when needed |
+| Ember Orange | `#F97316` | `brand.orange` | Alerts, “in progress” indicators |
 
-All combinations satisfy WCAG AA contrast. Default experience uses a “dark navy” surface with light text.
+The default experience is bright and inviting: white/very light gray surfaces, rich navy/slate text, and blue/green accents. Maintain AA contrast for body text and action states.
 
 ## Typography
+
+- **Headings:** IBM Plex Serif (500–600 weight). Use sentence case and relaxed letter spacing to keep titles friendly.  
+- **Body & UI:** Inter (400–500 weight). Clear microcopy, 16px minimum size.  
+- **Buttons:** Inter 500–600, sentence case (e.g., “Find help”).  
 
 ```css
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Serif:wght@500;600&display=swap');
@@ -31,57 +43,51 @@ All combinations satisfy WCAG AA contrast. Default experience uses a “dark nav
 }
 ```
 
-- **Headings (H1/H2):** IBM Plex Serif, 600/500 weight
-- **Body & UI:** Inter 400–500
-- **Buttons:** Inter 600
-- Minimum body size 16px; tracking for metadata uses uppercase with extended letter spacing.
-
 ## Iconography
 
-- Library: [lucide-react](https://lucide.dev/)  
-- Suggested glyphs: `FileText`, `Globe`, `Search`, `Sparkles`, `UserCheck`, `CheckCircle`, `AlertCircle`, `Clock`.  
-- Icons inherit text color (`stroke-current`) and default to 20px.
+- Use [lucide-react](https://lucide.dev/) with 20px default size.  
+- Icons reinforce warmth and clarity: `Heart`, `Home`, `HelpingHand`, `Search`, `Globe`, `UtensilsCrossed`, `UserCheck`.  
+- Icons inherit current text color (`stroke-current`).
 
-## Components
+## Components & Layout
 
-| Component | Notes |
+| Component | Guidance |
 | --- | --- |
-| **Header** | Sticky, `brand.navy`, contains logo/brand, quick links |
-| **Card** | `rounded-2xl`, `border-white/5`, `shadow-card` |
-| **Button** | Variants: primary (blue), secondary (slate), outline (transparent border), danger (orange) |
-| **Tabs** | Rounded, filled active state, accessible focus ring |
-| **Input** | 2xl radius, brand focus ring, subtle background |
-| **Badge/Chip** | Small pill, variant colors for status/pill filters |
-| **Alert Banner** | Color-coded backgrounds + icon for state change |
+| **Header/Nav** | Soft white background, brand name “Mercy Networks,” tagline beneath. Links in muted slate/blue. |
+| **Cards** | `rounded-2xl`, light border (`brand.border`), subtle shadow-sm. Generous padding for breathing room. |
+| **Buttons** | Primary = blue, secondary = slate outline on white, danger = orange. Sentence case labels. |
+| **Inputs** | Rounded 2xl, light border, generous padding. Placeholder copy should offer concrete prompts. |
+| **Badges/Chips** | Pill shapes to highlight “Who it helps,” “What’s required,” etc. |
+| **Footer** | Calm white/gray band with concise mission statement. |
 
-Animations use `transition-all duration-200 ease-out` for hover/focus.
+Layout defaults to a centered column (`max-w-4xl`) with `space-y-6/8`. Use white cards on the soft background for clarity.
 
-## Layout
+## Accessibility & UX
 
-- Max width `1200px` (`max-w-6xl`)
-- Sections separated by `gap-8`–`gap-10`
-- Cards use `p-6`, lists `gap-3`, modals `shadow-lg`
-- Grid: responsive 12-column; two-column layout for wide screens
+- Maintain visible focus rings (`ring-brand-blue ring-offset-white`).  
+- Never rely on color alone; pair icons or text for state changes.  
+- Keep copy at a 6th–8th grade reading level—speak plainly (“Who this helps,” “What’s required”).  
+- Provide inline error feedback (“We couldn’t find clear service details in this PDF…”).  
+- Optimize for mobile use in low-bandwidth scenarios.
 
-## Accessibility
+## Tone Examples
 
-- All buttons/links include visible focus ring (`ring-brand-blue`).
-- Never rely on color alone — pair icons/text for state.
-- Inline errors accompany field descriptions.
-- Copy aims for reading grade ~8.
+- “Find help, simply.”  
+- “Tell us what you need so we can connect you to the right shelter or program.”  
+- “Scan this website for service details.”  
+- “We didn’t find a match yet—try adjusting your words or add a new service below.”
 
 ## Brand Assets
 
-- **Wordmark:** “Eligibility Finder” in IBM Plex Serif Bold.
-- **Favicon:** `/favicon.svg` (blue circle with white check).
-- **Open Graph:** `/og-image.svg` with wordmark + tagline.
+- **Logo Concept:** Heart + home monogram, rendering compassion and safe shelter.  
+- **Wordmark:** “Mercy Networks” in IBM Plex Serif bold with ample tracking.  
+- **Favicon:** `/favicon.svg` (heart-home line art on blue background).  
+- **Open Graph Image:** `/og-image.svg` with wordmark and tagline “Where help finds you.”
 
 ## Usage Guidelines
 
-1. Prefer `Card` + `CardHeader` + `CardContent` for modular sections.
-2. Keep hero/intro copy concise (“Clarity from complexity…”).
-3. Use tabs for PDF vs Website ingestion; both share the same result view.
-4. Metadata (timestamps, source) uses uppercase microcopy with Cool Gray text.
-5. History lists show highlight on hover and active state with blue border.
-
-For additional details, see the implementation in `app/page.tsx`, `app/records/[id]/page.tsx`, and shared UI components under `components/ui/`.
+1. Keep hero and navigation copy focused on helping people find shelter, food, medical care, or long-term support—avoid “eligibility” unless explanatory.  
+2. Search results should summarize “Who this helps,” “What’s required,” and “Where it is” in human terms.  
+3. Prompt staff to add new services when we have gaps; celebrate shared impact (“Add new connections”).  
+4. Metadata and social previews must reinforce the brand promise: Mercy, connection, simplicity.  
+5. When in doubt, ask: “Would this wording help someone in crisis feel guided and respected?”

@@ -1,16 +1,15 @@
-# Eligibility Finder
+# Mercy Networks
 
-Eligibility Finder is a production-ready Next.js 14 application that helps housing and homeless-services teams turn program materials into structured eligibility data. Upload a PDF or point to a website, let the app extract text, validate it with OpenAI via the Vercel AI SDK, and store the structured result in PostgreSQL using Drizzle ORM.
+Mercy Networks is a production-ready Next.js 14 application that connects people experiencing homelessness—and the caseworkers who serve them—to nearby shelters, meals, medical care, and housing programs. Upload a PDF or share a website, let the app extract the key service details with the Vercel AI SDK, and store the structured result in PostgreSQL using Drizzle ORM so everyone can find it next time.
 
 ## Features
 
-- AI-assisted search bar that interprets natural language queries to surface relevant programs.
-- Upload a single PDF and trigger server-side parsing with `pdf-parse`.
-- Analyze eligibility directly from public program web pages with the same schema.
-- Extract key service details (who it helps, requirements, location) using OpenAI with a strict Zod schema.
-- Persist raw text, extracted eligibility text, and the full structured JSON in PostgreSQL.
-- View results immediately including the eligibility excerpt, structured fields, and a debug JSON view.
-- Browse and search past ingestions (PDF or web) from the unified history view.
+- Natural-language search that understands needs like “bed tonight near Plano” or “housing voucher help.”
+- Upload a PDF flyer or intake packet and trigger server-side parsing with `pdf-parse`.
+- Scan public program web pages and extract who the service helps, where it is, and what’s required.
+- Persist raw text, structured service data, and references in PostgreSQL.
+- Review results instantly with a plain-language summary (“Who this helps,” “What’s required,” “Where it is”).
+- Browse and search previously added services from the records view.
 
 ## Getting Started
 
@@ -59,10 +58,10 @@ Deploy like any other Next.js 14 application. Provide `OPENAI_API_KEY` and `DATA
 
 ## Brand Guide
 
-- **Identity:** Eligibility Finder — “Clarity from complexity — faster eligibility for everyone.”
-- **Colors:** Primary Blue `#2563EB`, Midnight Navy `#0F172A`, Slate `#1E293B`, Cool Gray `#CBD5E1`, Soft White `#F8FAFC`, Accent Green `#10B981`, Accent Orange `#F97316`.
+- **Identity:** Mercy Networks — “Where help finds you.”
+- **Colors:** Trust Blue `#2563EB`, Mercy Green `#10B981`, Slate `#1E293B`, Soft Gray `#CBD5E1`, Soft White `#F8FAFC`, Navy `#0F172A`, Ember Orange `#F97316`.
 - **Typography:** IBM Plex Serif (headings) + Inter (UI/body).
-- **Components:** Rounded-2xl cards, blue focus rings, pill badges for populations/requirements, tabbed ingestion (PDF vs. Website).
+- **Components:** Light, rounded cards; compassionate microcopy; clear sections (“Who this helps,” “What’s required,” “Where it is”).
 - Detailed system documentation lives in [`docs/BRAND_GUIDE.md`](docs/BRAND_GUIDE.md) and the `/docs/brand` route.
 
 ## License

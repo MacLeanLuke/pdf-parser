@@ -8,10 +8,10 @@ export function Header() {
         <Link href="/" className="flex items-center gap-3">
           <div>
             <p className="font-serif text-lg font-semibold text-brand-heading">
-              Eligibility Finder
+              Mercy Networks
             </p>
             <p className="text-xs font-medium uppercase tracking-[0.3em] text-brand-muted">
-              Tools for people seeking shelter, food, and support
+              Connecting people and programs through compassion
             </p>
           </div>
         </Link>
@@ -22,21 +22,21 @@ export function Header() {
             className="inline-flex items-center gap-1 rounded-full px-3 py-2 transition hover:bg-brand-background hover:text-brand-heading"
           >
             <Home className="h-4 w-4" aria-hidden="true" />
-            Search
+            Find Help
           </Link>
           <Link
             href="/records"
             className="inline-flex items-center gap-1 rounded-full px-3 py-2 transition hover:bg-brand-background hover:text-brand-heading"
           >
             <FileText className="h-4 w-4" aria-hidden="true" />
-            Records
+            Saved Services
           </Link>
           <Link
-            href="mailto:support@eligibilityfinder.org"
+            href="mailto:support@mercynetworks.com"
             className="inline-flex items-center gap-1 rounded-full px-3 py-2 transition hover:bg-brand-background hover:text-brand-heading"
           >
             <HelpCircle className="h-4 w-4" aria-hidden="true" />
-            Help
+            Help & Support
           </Link>
         </nav>
       </div>

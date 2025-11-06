@@ -16,14 +16,14 @@ export default function BrandPage() {
 
       <Card>
         <CardHeader className="space-y-4">
-          <Badge className="w-fit">Brand System</Badge>
+          <Badge className="w-fit">Mercy Networks</Badge>
           <CardTitle className="text-3xl font-semibold text-brand-heading">
-            Eligibility Finder Design Language
+            Mercy Networks Design Language
           </CardTitle>
           <p className="text-sm text-brand-muted">
-            This guide summarizes the colors, fonts, and components that keep the
-            Eligibility Finder experience cohesive. For the exhaustive reference,
-            see <code className="rounded-full bg-brand-background px-3 py-1 text-xs">
+            This page summarizes the colors, typography, and component patterns that keep
+            Mercy Networks warm, clear, and compassionate. For the full reference, see{" "}
+            <code className="rounded-full bg-brand-background px-3 py-1 text-xs">
               docs/BRAND_GUIDE.md
             </code>
             .
@@ -36,8 +36,8 @@ export default function BrandPage() {
               Palette
             </h3>
             <p className="text-sm text-brand-muted">
-              Primary Blue (`brand.blue`) drives action, Midnight Navy (`brand.navy`)
-              grounds surfaces, and accent greens/oranges communicate status.
+              Trust Blue (`brand.blue`) and Mercy Green (`brand.green`) anchor action and
+              compassion, supported by soft whites and gentle grays.
             </p>
           </div>
           <div className="space-y-3 rounded-2xl border border-brand-border bg-brand-background p-5">
@@ -56,8 +56,8 @@ export default function BrandPage() {
               Components
             </h3>
             <p className="text-sm text-brand-muted">
-              Use cards with `rounded-2xl`, tabs for ingestion modes, badges for status,
-              and focus rings with `brand.blue` for accessibility.
+              Rounded cards, pill badges, generous spacing, and sentence-case buttons keep
+              the experience calm and human.
             </p>
           </div>
         </CardContent>

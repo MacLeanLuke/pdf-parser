@@ -260,15 +260,15 @@ export default function Home() {
     <div className="space-y-8">
       <section className="space-y-3 text-center">
         <Badge variant="slate" className="mx-auto w-fit">
-          Find help fast
+          Mercy Networks
         </Badge>
         <h1 className="text-4xl font-serif font-semibold text-brand-heading">
-          Find shelter, food, and support — fast.
+          Find help, simply.
         </h1>
         <p className="mx-auto max-w-2xl text-base text-brand-muted">
-          Search across services your team has already saved. If we don’t have the
-          right shelter or program yet, we’ll help you add it from a website or PDF in
-          just a few minutes.
+          Mercy Networks helps people and caseworkers find the right support—from
+          shelter and meals to housing programs—with one simple search. If we don’t
+          have it yet, we’ll help you add it so everyone can discover it next time.
         </p>
       </section>
 
@@ -292,20 +292,20 @@ export default function Home() {
       {searchStatus === "idle" && (
         <Card>
           <CardHeader>
-            <CardTitle>How this works</CardTitle>
+            <CardTitle>How Mercy Networks works</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-3">
             <InfoItem
-              title="Tell us what you need"
-              description="Describe your situation or the person you’re helping in your own words. We use AI to figure out what kind of help to look for."
+              title="Ask for help"
+              description="Tell us what you or someone you’re supporting needs. We understand plain language—no forms, no jargon."
             />
             <InfoItem
-              title="See services we already know about"
-              description="We’ll show shelters, programs, and resources your team has saved, including who they help and how to get in."
+              title="See what’s available"
+              description="Explore shelters, meals, medical care, and programs your team has already connected through Mercy Networks."
             />
             <InfoItem
-              title="Add a new service when needed"
-              description="If we don’t have it yet, we’ll guide you to the right website or PDF and pull out the important details for you."
+              title="Add new connections"
+              description="Found a new service? Add it from a website or PDF so others can find it next time."
             />
           </CardContent>
         </Card>
@@ -435,10 +435,10 @@ function ResultsSection({
     <Card>
       <CardHeader className="flex items-center justify-between">
         <CardTitle className="text-lg text-brand-heading">
-          Services that may fit ({results.length})
-        </CardTitle>
+          Services that may fit
+          </CardTitle>
         <Button variant="ghost" className="gap-2 text-brand-muted" onClick={onAddNew}>
-          Need to add a service?
+          Add a new connection
           <ArrowRight className="h-4 w-4" aria-hidden="true" />
         </Button>
       </CardHeader>
