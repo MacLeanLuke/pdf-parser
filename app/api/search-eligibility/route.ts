@@ -105,7 +105,10 @@ async function interpretQuery(query: string): Promise<SearchFilter> {
   }
 }
 
-async function searchDatabase(filters: SearchFilter, limit: number) {
+async function searchDatabase(
+  filters: SearchFilter,
+  limit: number,
+): Promise<SearchResult[]> {
   const conditions = [];
 
   if (filters.textQuery) {
@@ -164,7 +167,7 @@ async function searchDatabase(filters: SearchFilter, limit: number) {
 
   return rawRecords.map((record) => ({
     ...record,
-    sourceType: record.sourceType === "web" ? "web" : "pdf",
+    sourceType: (record.sourceType as "pdf" | "web") ?? "pdf",
     createdAt: record.createdAt
       ? new Date(record.createdAt).toISOString()
       : null,
