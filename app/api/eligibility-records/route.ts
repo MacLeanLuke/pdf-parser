@@ -8,6 +8,7 @@ const MAX_LIMIT = 100;
 const SUMMARY_SNIPPET_LENGTH = 160;
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {

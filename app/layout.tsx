@@ -3,7 +3,12 @@ import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import Header from "@/components/header";
 
+const appUrl =
+  process.env.NEXT_PUBLIC_APP_URL ??
+  "https://pdf-parser-git-main-macleanlukes-projects.vercel.app";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(appUrl),
   title: "Eligibility Finder",
   description: "Clarity from complexity — faster eligibility for everyone.",
   icons: {

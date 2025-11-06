@@ -156,12 +156,11 @@ async function searchDatabase(
         ? conditions[0]
         : and(...conditions);
 
-  let builder = baseQuery;
-  if (whereClause) {
-    builder = builder.where(whereClause);
-  }
+  const queryBuilder = whereClause
+    ? baseQuery.where(whereClause)
+    : baseQuery;
 
-  const rawRecords = await builder
+  const rawRecords = await queryBuilder
     .orderBy(desc(eligibilityDocuments.createdAt))
     .limit(limit);
 
