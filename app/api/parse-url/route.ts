@@ -74,6 +74,16 @@ export async function POST(request: NextRequest) {
       maxCharacters: MAX_PAGE_TEXT_LENGTH,
     });
 
+    if (!eligibility.rawEligibilityText.trim()) {
+      return NextResponse.json(
+        {
+          error:
+            "We parsed the page but could not identify any explicit eligibility language. Please verify the page contains eligibility details.",
+        },
+        { status: 422 },
+      );
+    }
+
     const rawTextSnippet = createSnippet(text, RESPONSE_SNIPPET_LENGTH);
 
     const [record] = await db

@@ -52,6 +52,16 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    if (!eligibility.rawEligibilityText.trim()) {
+      return NextResponse.json(
+        {
+          error:
+            "We could not find an eligibility section in this PDF. Please ensure the document contains explicit eligibility text.",
+        },
+        { status: 422 },
+      );
+    }
+
     const truncatedRawText =
       text.length > MAX_RAW_TEXT_LENGTH
         ? `${text.slice(0, MAX_RAW_TEXT_LENGTH)}\n...[truncated]`
