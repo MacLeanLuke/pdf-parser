@@ -11,7 +11,7 @@ Guidance for Claude Code (claude.ai/code) when contributing to this repository.
 
 ## Architecture Overview
 
-Eligibility PDF Ingestor is a Next.js 14 (App Router) application that ingests program PDFs or public website pages for homeless-services and housing support, extracts structured eligibility information with OpenAI, and persists the result in PostgreSQL through Drizzle ORM.
+Eligibility Finder is a Next.js 14 (App Router) application that ingests program PDFs or public website pages for homeless-services and housing support, extracts structured eligibility information with OpenAI, and persists the result in PostgreSQL through Drizzle ORM.
 
 ### Backend
 
@@ -27,7 +27,7 @@ Eligibility PDF Ingestor is a Next.js 14 (App Router) application that ingests p
 ### Frontend
 
 - Single-page interface (`app/page.tsx`) with tabs for PDF upload and website ingestion, a shared result viewer, and a searchable history panel.
-- Tailwind CSS used for styling; minimal components to keep the UI focused.
+- Tailwind CSS with a custom brand system (see `components/ui/*` and `app/docs/brand/page.tsx`) keeps visuals cohesive.
 
 ### Environment
 

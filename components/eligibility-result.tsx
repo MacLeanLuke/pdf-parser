@@ -1,5 +1,10 @@
 import { useMemo } from "react";
 import type { Eligibility } from "@/lib/eligibility-schema";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Globe, FileText, CalendarDays, Link as LinkIcon } from "lucide-react";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 type EligibilityRecordDetail = {
   programName: string | null;
@@ -12,9 +17,12 @@ type EligibilityRecordDetail = {
   createdAt: string;
 };
 
-const SOURCE_BADGES: Record<EligibilityRecordDetail["sourceType"], string> = {
-  pdf: "PDF",
-  web: "Website",
+const SOURCE_META: Record<
+  EligibilityRecordDetail["sourceType"],
+  { label: string; icon: typeof FileText }
+> = {
+  pdf: { label: "PDF", icon: FileText },
+  web: { label: "Website", icon: Globe },
 };
 
 function formatDateTime(value: string | null) {
@@ -79,121 +87,120 @@ export function EligibilityResult({ record }: { record: EligibilityRecordDetail 
     record.sourceUrl ||
     "Unknown program";
 
+  const SourceIcon = SOURCE_META[record.sourceType].icon;
+
   return (
-    <section className="space-y-6 rounded-2xl border border-slate-800 bg-slate-900/60 p-6 shadow-lg shadow-slate-950/40">
-      <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
-            Analysis Result
+    <Card className="space-y-6 bg-brand-slate/80">
+      <CardHeader className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="space-y-2">
+          <Badge className="gap-2 bg-brand-blue/15 text-brand-blue">
+            <SourceIcon className="h-3.5 w-3.5" aria-hidden="true" />
+            {SOURCE_META[record.sourceType].label}
+          </Badge>
+          <CardTitle className="text-2xl font-semibold text-brand-white">
+            {heading}
+          </CardTitle>
+          <p className="flex items-center gap-2 text-sm text-brand-gray">
+            <CalendarDays className="h-4 w-4" aria-hidden="true" />
+            Captured {formatDateTime(record.createdAt)}
+            {record.sourceUrl && (
+              <>
+                <span className="text-brand-gray/60">•</span>
+                <Link
+                  href={record.sourceUrl}
+                  className="inline-flex items-center gap-1 text-brand-blue underline decoration-dotted underline-offset-4 hover:text-brand-white"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <LinkIcon className="h-3.5 w-3.5" aria-hidden="true" />
+                  Source link
+                </Link>
+              </>
+            )}
           </p>
-          <h2 className="text-2xl font-semibold text-slate-50">{heading}</h2>
-          <dl className="mt-2 flex flex-wrap gap-4 text-xs text-slate-400">
-            <div>
-              <dt className="uppercase tracking-[0.2em] text-slate-500">
-                Source
-              </dt>
-              <dd className="mt-1 inline-flex items-center gap-2">
-                <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-medium text-slate-200">
-                  {SOURCE_BADGES[record.sourceType]}
-                </span>
-                {record.sourceUrl && (
-                  <a
-                    href={record.sourceUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-emerald-300 underline decoration-dotted underline-offset-4 hover:text-emerald-200"
-                  >
-                    Open source
-                  </a>
-                )}
-              </dd>
-            </div>
-            <div>
-              <dt className="uppercase tracking-[0.2em] text-slate-500">
-                Captured
-              </dt>
-              <dd className="mt-1 text-slate-300">
-                {formatDateTime(record.createdAt)}
-              </dd>
-            </div>
-          </dl>
         </div>
-      </header>
-
-      {record.pageTitle && record.sourceType === "web" && (
-        <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4 text-sm text-slate-300">
-          <span className="font-semibold text-slate-200">Page title: </span>
-          {record.pageTitle}
-        </div>
-      )}
-
-      <div>
-        <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
-          Extracted Eligibility Section
-        </h3>
-        <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap rounded-xl border border-slate-800 bg-slate-950/80 p-4 text-sm leading-relaxed text-slate-200">
-          {record.rawEligibilityText}
-        </pre>
-      </div>
-
-      <div>
-        <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
-          Structured Eligibility
-        </h3>
-        <dl className="mt-3 grid gap-4 md:grid-cols-2">
-          {structuredFields.map((field) => (
-            <div
-              key={field.label}
-              className="rounded-xl border border-slate-800 bg-slate-950/60 p-4"
-            >
-              <dt className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">
-                {field.label}
-              </dt>
-              <dd className="mt-2 text-sm text-slate-50">
-                {Array.isArray(field.value) ? (
-                  field.value.length ? (
-                    <div className="flex flex-wrap gap-2">
-                      {field.value.map((value) => (
-                        <span
-                          key={value}
-                          className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300"
-                        >
-                          {humanize(value)}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-slate-400">—</span>
-                  )
-                ) : (
-                  <span className="text-slate-100">{field.value}</span>
-                )}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </div>
-
-      <details className="group rounded-xl border border-slate-800 bg-slate-950/60 p-4">
-        <summary className="cursor-pointer text-sm font-semibold text-slate-200">
-          View raw JSON
-        </summary>
-        <pre className="mt-3 max-h-72 overflow-auto rounded-lg bg-slate-950/90 p-4 text-xs text-emerald-200">
-          {JSON.stringify(record.eligibility, null, 2)}
-        </pre>
-      </details>
-
-      {record.rawTextSnippet && (
+        {record.pageTitle && record.sourceType === "web" && (
+          <div className="rounded-2xl border border-white/5 bg-white/5 px-4 py-3 text-sm text-brand-gray">
+            <span className="font-semibold text-brand-white">Page title:</span>{" "}
+            {record.pageTitle}
+          </div>
+        )}
+      </CardHeader>
+      <CardContent className="space-y-6">
         <div>
-          <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
-            Raw Text Snippet
+          <h3 className="text-sm font-semibold uppercase tracking-[0.25em] text-brand-gray">
+            Extracted eligibility section
           </h3>
-          <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap rounded-xl border border-slate-800 bg-slate-950/70 p-4 text-xs leading-relaxed text-slate-300">
-            {record.rawTextSnippet}
+          <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap rounded-2xl border border-white/5 bg-brand-navy/60 p-4 text-sm leading-relaxed text-brand-white/90 shadow-card-soft">
+            {record.rawEligibilityText}
           </pre>
         </div>
-      )}
-    </section>
+
+        <div>
+          <h3 className="text-sm font-semibold uppercase tracking-[0.25em] text-brand-gray">
+            Structured eligibility
+          </h3>
+          <dl className="mt-4 grid gap-4 md:grid-cols-2">
+            {structuredFields.map((field) => (
+              <div
+                key={field.label}
+                className="rounded-2xl border border-white/5 bg-white/5 p-4"
+              >
+                <dt className="text-xs font-semibold uppercase tracking-[0.25em] text-brand-gray">
+                  {field.label}
+                </dt>
+                <dd className="mt-2 text-sm text-brand-white">
+                  {Array.isArray(field.value) ? (
+                    field.value.length ? (
+                      <div className="flex flex-wrap gap-2">
+                        {field.value.map((value) => (
+                          <Badge
+                            key={value}
+                            variant={
+                              field.label === "Population" ? "slate" : "default"
+                            }
+                            className={cn(
+                              field.label === "Population" &&
+                                "bg-brand-blue/15 text-brand-blue",
+                            )}
+                          >
+                            {humanize(value)}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-brand-gray">—</span>
+                    )
+                  ) : (
+                    <span>{field.value}</span>
+                  )}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+
+        <details className="group rounded-2xl border border-white/5 bg-brand-navy/50 p-4">
+          <summary className="cursor-pointer text-sm font-semibold text-brand-white">
+            View raw JSON
+          </summary>
+          <pre className="mt-3 max-h-72 overflow-auto rounded-2xl bg-brand-slate/80 p-4 text-xs text-brand-gray">
+            {JSON.stringify(record.eligibility, null, 2)}
+          </pre>
+        </details>
+
+        {record.rawTextSnippet && (
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-[0.25em] text-brand-gray">
+              Raw text snippet
+            </h3>
+            <pre className="mt-3 max-h-48 overflow-auto whitespace-pre-wrap rounded-2xl border border-white/5 bg-brand-navy/60 p-4 text-xs leading-relaxed text-brand-gray">
+              {record.rawTextSnippet}
+            </pre>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

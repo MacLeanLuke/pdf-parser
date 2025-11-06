@@ -1,6 +1,6 @@
 # Deployment Guide
 
-This document covers deploying the Eligibility PDF Ingestor to a managed hosting provider such as Vercel or Fly.io with PostgreSQL enabled from day one.
+This document covers deploying Eligibility Finder to a managed hosting provider such as Vercel or Fly.io with PostgreSQL enabled from day one.
 
 ## Prerequisites
 

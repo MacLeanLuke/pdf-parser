@@ -1,6 +1,6 @@
-# Eligibility PDF Ingestor
+# Eligibility Finder
 
-Eligibility PDF Ingestor is a production-ready Next.js 14 application that helps housing and homeless-services teams turn program materials into structured eligibility data. Upload a PDF or point to a website, let the app extract text, validate it with OpenAI via the Vercel AI SDK, and store the structured result in PostgreSQL using Drizzle ORM.
+Eligibility Finder is a production-ready Next.js 14 application that helps housing and homeless-services teams turn program materials into structured eligibility data. Upload a PDF or point to a website, let the app extract text, validate it with OpenAI via the Vercel AI SDK, and store the structured result in PostgreSQL using Drizzle ORM.
 
 ## Features
 
@@ -55,6 +55,14 @@ Eligibility PDF Ingestor is a production-ready Next.js 14 application that helps
 ## Deployment
 
 Deploy like any other Next.js 14 application. Provide `OPENAI_API_KEY` and `DATABASE_URL` in the target environment. If deploying to platforms that require SSL for Postgres connections, set `sslmode` within the `DATABASE_URL` or adjust the pool configuration in `db/index.ts`.
+
+## Brand Guide
+
+- **Identity:** Eligibility Finder — “Clarity from complexity — faster eligibility for everyone.”
+- **Colors:** Primary Blue `#2563EB`, Midnight Navy `#0F172A`, Slate `#1E293B`, Cool Gray `#CBD5E1`, Soft White `#F8FAFC`, Accent Green `#10B981`, Accent Orange `#F97316`.
+- **Typography:** IBM Plex Serif (headings) + Inter (UI/body).
+- **Components:** Rounded-2xl cards, blue focus rings, pill badges for populations/requirements, tabbed ingestion (PDF vs. Website).
+- Detailed system documentation lives in [`docs/BRAND_GUIDE.md`](docs/BRAND_GUIDE.md) and the `/docs/brand` route.
 
 ## License
 
