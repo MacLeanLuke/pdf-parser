@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    let selection = db
+    const baseQuery = db
       .select({
         id: eligibilityDocuments.id,
         programName: eligibilityDocuments.programName,
@@ -49,16 +49,16 @@ export async function GET(request: NextRequest) {
         rawEligibilityText: eligibilityDocuments.rawEligibilityText,
       })
       .from(eligibilityDocuments)
-      .orderBy(desc(eligibilityDocuments.createdAt))
-      .limit(limit);
+      .orderBy(desc(eligibilityDocuments.createdAt));
 
-    if (conditions.length === 1) {
-      selection = selection.where(conditions[0]);
-    } else if (conditions.length > 1) {
-      selection = selection.where(and(...conditions));
-    }
+    const whereClause =
+      conditions.length === 1
+        ? conditions[0]
+        : conditions.length > 1
+          ? and(...conditions)
+          : undefined;
 
-    const records = await selection;
+    const records = await baseQuery.where(whereClause).limit(limit);
 
     const items = records.map(
       ({ rawEligibilityText, ...record }) => ({
