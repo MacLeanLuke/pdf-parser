@@ -158,11 +158,17 @@ async function searchDatabase(filters: SearchFilter, limit: number) {
     builder = builder.where(whereClause);
   }
 
-  const records = await builder
+  const rawRecords = await builder
     .orderBy(desc(eligibilityDocuments.createdAt))
     .limit(limit);
 
-  return records;
+  return rawRecords.map((record) => ({
+    ...record,
+    sourceType: record.sourceType === "web" ? "web" : "pdf",
+    createdAt: record.createdAt
+      ? new Date(record.createdAt).toISOString()
+      : null,
+  }));
 }
 
 function rankResults(
