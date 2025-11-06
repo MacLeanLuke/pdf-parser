@@ -1,32 +1,31 @@
 "use client";
 
-import Link from "next/link";
-import {
-  ChangeEvent,
-  FormEvent,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import {
-  FileText,
-  Globe,
-  Loader2,
-  ShieldCheck,
-  Search,
-  AlertCircle,
-  History,
-} from "lucide-react";
-import EligibilityResult from "@/components/eligibility-result";
-import type { Eligibility } from "@/lib/eligibility-schema";
-import { Tabs } from "@/components/ui/tabs";
+import { useState } from "react";
+import { ArrowRight, FileText, Globe, Loader2, Search } from "lucide-react";
+import SearchBar from "@/components/search-bar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import EligibilityResult from "@/components/eligibility-result";
+import type { SearchFilter } from "@/lib/search-filter";
+import type { Eligibility } from "@/lib/eligibility-schema";
 
-type Tab = "pdf" | "web";
+type SearchResult = {
+  id: string;
+  programName: string | null;
+  sourceType: "pdf" | "web";
+  sourceUrl: string | null;
+  pageTitle: string | null;
+  createdAt: string | null;
+  previewEligibilityText: string;
+};
+
+type SearchResponse = {
+  query: string;
+  filters: SearchFilter;
+  results: SearchResult[];
+};
 
 type EligibilityRecordDetail = {
   id: string;
@@ -40,553 +39,593 @@ type EligibilityRecordDetail = {
   createdAt: string;
 };
 
-type EligibilityRecordSummary = {
-  id: string;
-  programName: string | null;
-  sourceType: "pdf" | "web";
-  sourceUrl: string | null;
-  pageTitle: string | null;
-  createdAt: string;
-  preview: string;
-};
-
-type ListResponse = {
-  items: EligibilityRecordSummary[];
-};
-
-const tabs = [
-  {
-    id: "pdf" as const,
-    label: "From PDF",
-    icon: <FileText className="h-4 w-4" aria-hidden="true" />,
-  },
-  {
-    id: "web" as const,
-    label: "From Website",
-    icon: <Globe className="h-4 w-4" aria-hidden="true" />,
-  },
-];
-
-const SOURCE_BADGES: Record<
-  EligibilityRecordSummary["sourceType"],
-  { label: string; className: string }
-> = {
-  pdf: { label: "PDF", className: "bg-brand-blue/15 text-brand-blue" },
-  web: { label: "Website", className: "bg-brand-green/15 text-brand-green" },
-};
+type SearchStatus = "idle" | "loading" | "success" | "error";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<Tab>("pdf");
-  const [pdfFile, setPdfFile] = useState<File | null>(null);
-  const [urlInput, setUrlInput] = useState("");
-  const [pdfError, setPdfError] = useState<string | null>(null);
-  const [urlError, setUrlError] = useState<string | null>(null);
-  const [isPdfSubmitting, setIsPdfSubmitting] = useState(false);
-  const [isUrlSubmitting, setIsUrlSubmitting] = useState(false);
+  const [query, setQuery] = useState("");
+  const [searchStatus, setSearchStatus] = useState<SearchStatus>("idle");
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searchFilters, setSearchFilters] = useState<SearchFilter | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [selectedRecord, setSelectedRecord] =
     useState<EligibilityRecordDetail | null>(null);
-  const [history, setHistory] = useState<EligibilityRecordSummary[]>([]);
-  const [historyLoading, setHistoryLoading] = useState(false);
-  const [historyError, setHistoryError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sourceFilter, setSourceFilter] = useState<"all" | "pdf" | "web">("all");
-  const [detailLoading, setDetailLoading] = useState(false);
+  const [loadingRecordId, setLoadingRecordId] = useState<string | null>(null);
+  const [showIngestion, setShowIngestion] = useState(false);
 
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [websiteUrl, setWebsiteUrl] = useState("");
+  const [websiteLoading, setWebsiteLoading] = useState(false);
+  const [websiteError, setWebsiteError] = useState<string | null>(null);
 
-  const fetchHistory = useCallback(async () => {
-    setHistoryLoading(true);
-    setHistoryError(null);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
 
-    try {
-      const params = new URLSearchParams({ limit: "10" });
-      if (searchQuery.trim()) {
-        params.set("q", searchQuery.trim());
-      }
-      if (sourceFilter !== "all") {
-        params.set("sourceType", sourceFilter);
-      }
+  const hasSearched = searchStatus === "success" || searchStatus === "error";
+  const noResults =
+    searchStatus === "success" && searchResults.length === 0;
 
-      const response = await fetch(`/api/eligibility-records?${params}`);
-      if (!response.ok) {
-        throw new Error("Request failed");
-      }
-
-      const payload: ListResponse = await response.json();
-      setHistory(payload.items ?? []);
-    } catch (error) {
-      console.error("Failed to load history", error);
-      setHistoryError("Unable to load recent records. Please try again.");
-    } finally {
-      setHistoryLoading(false);
+  const handleQueryChange = (value: string) => {
+    setQuery(value);
+    if (searchStatus === "error") {
+      setSearchStatus("idle");
     }
-  }, [searchQuery, sourceFilter]);
-
-  useEffect(() => {
-    fetchHistory();
-  }, [fetchHistory]);
-
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const selected = event.target.files?.[0];
-    setPdfFile(selected ?? null);
-    setPdfError(null);
+    setSearchError(null);
   };
 
-  const handlePdfSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setPdfError(null);
-
-    if (!pdfFile) {
-      setPdfError("Please select a PDF to analyze.");
+  const handleSearch = async (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      setSearchError("Please enter a search query.");
+      setSearchStatus("error");
       return;
     }
 
-    const formData = new FormData();
-    formData.append("file", pdfFile);
-    setIsPdfSubmitting(true);
+    setQuery(trimmed);
+    setSearchStatus("loading");
+    setSearchError(null);
+    setShowIngestion(false);
+    setSelectedRecord(null);
 
     try {
-      const response = await fetch("/api/parse-eligibility", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const payload = await response.json().catch(() => null);
-        throw new Error(payload?.error ?? "Failed to analyze PDF.");
-      }
-
-      const payload = (await response.json()) as EligibilityRecordDetail;
-      setSelectedRecord(payload);
-      updateHistoryWith(payload);
-      setPdfFile(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    } catch (error) {
-      console.error("Failed to parse PDF", error);
-      setPdfError(
-        error instanceof Error ? error.message : "Unable to analyze PDF.",
-      );
-    } finally {
-      setIsPdfSubmitting(false);
-    }
-  };
-
-  const handleUrlSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setUrlError(null);
-
-    if (!urlInput.trim()) {
-      setUrlError("Please enter a program page URL.");
-      return;
-    }
-
-    try {
-      new URL(urlInput);
-    } catch {
-      setUrlError("Please enter a valid URL.");
-      return;
-    }
-
-    setIsUrlSubmitting(true);
-
-    try {
-      const response = await fetch("/api/parse-url", {
+      const response = await fetch("/api/search-eligibility", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: urlInput.trim() }),
+        body: JSON.stringify({ query: trimmed, limit: 20 }),
       });
 
       if (!response.ok) {
         const payload = await response.json().catch(() => null);
-        throw new Error(payload?.error ?? "Failed to analyze URL.");
+        throw new Error(payload?.error ?? "Search failed.");
       }
 
-      const payload = (await response.json()) as EligibilityRecordDetail;
-      setSelectedRecord(payload);
-      updateHistoryWith(payload);
-      setUrlInput("");
+      const payload = (await response.json()) as SearchResponse;
+      setSearchResults(payload.results);
+      setSearchFilters(payload.filters);
+      setSearchStatus("success");
+
+      if (payload.results.length === 0) {
+        setShowIngestion(true);
+      }
     } catch (error) {
-      console.error("Failed to parse URL", error);
-      setUrlError(
-        error instanceof Error ? error.message : "Unable to analyze the URL.",
+      console.error("Search failed", error);
+      setSearchStatus("error");
+      setSearchError(
+        error instanceof Error ? error.message : "Search failed. Try again.",
       );
-    } finally {
-      setIsUrlSubmitting(false);
     }
   };
 
-  const updateHistoryWith = (record: EligibilityRecordDetail) => {
-    setHistory((prev) => {
-      const summary = detailToSummary(record);
-      const merged = [summary, ...prev.filter((item) => item.id !== summary.id)];
-      return merged.slice(0, 10);
-    });
-  };
-
-  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    fetchHistory();
-  };
-
-  const handleSelectRecord = async (id: string) => {
-    setDetailLoading(true);
+  const viewRecordDetails = async (id: string) => {
+    setLoadingRecordId(id);
     try {
       const response = await fetch(`/api/eligibility-records/${id}`);
       if (!response.ok) {
         const payload = await response.json().catch(() => null);
         throw new Error(payload?.error ?? "Failed to load record.");
       }
-
       const payload = (await response.json()) as EligibilityRecordDetail;
       setSelectedRecord(payload);
     } catch (error) {
       console.error("Failed to load record", error);
-      setHistoryError(
+      setSearchError(
         error instanceof Error ? error.message : "Unable to load record.",
       );
     } finally {
-      setDetailLoading(false);
+      setLoadingRecordId(null);
     }
   };
 
-  return (
-    <div className="space-y-10">
-      <Card className="bg-brand-slate/80">
-        <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-2">
-            <Badge variant="default" className="bg-brand-blue/15 text-brand-blue">
-              <ShieldCheck className="mr-2 h-3.5 w-3.5" aria-hidden="true" />
-              Eligibility Finder
-            </Badge>
-            <CardTitle className="text-3xl font-semibold text-brand-white">
-              Clarity from complexity.
-            </CardTitle>
-            <p className="max-w-2xl text-sm text-brand-gray">
-              Upload program PDFs or analyze public websites to surface structured
-              eligibility rules in seconds. Built for social workers and housing
-              agencies to move faster with confidence.
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            size="lg"
-            className="gap-2 border-brand-blue/30 text-brand-white hover:border-brand-blue/60 hover:bg-brand-blue/10"
-            onClick={() => setActiveTab("pdf")}
-          >
-            <FileText className="h-4 w-4" aria-hidden="true" />
-            Start with a PDF
-          </Button>
-        </CardHeader>
-      </Card>
+  const handleWebsiteIngest = async () => {
+    const trimmed = websiteUrl.trim();
+    if (!trimmed) {
+      setWebsiteError("Please paste a program page URL.");
+      return;
+    }
 
-      <Tabs
-        tabs={tabs}
-        activeTab={activeTab}
-        onChange={setActiveTab}
-        className="max-w-xl"
+    try {
+      new URL(trimmed);
+    } catch {
+      setWebsiteError("Please enter a valid URL (including https://).");
+      return;
+    }
+
+    setWebsiteLoading(true);
+    setWebsiteError(null);
+    try {
+      const response = await fetch("/api/parse-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: trimmed }),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error ?? "Failed to analyze website.");
+      }
+
+      const payload = (await response.json()) as EligibilityRecordDetail;
+      setSelectedRecord(payload);
+      setWebsiteUrl("");
+      setSearchResults((prev) => [
+        {
+          id: payload.id,
+          programName: payload.programName,
+          sourceType: payload.sourceType,
+          sourceUrl: payload.sourceUrl,
+          pageTitle: payload.pageTitle,
+          createdAt: payload.createdAt,
+          previewEligibilityText: payload.rawEligibilityText.slice(0, 200),
+        },
+        ...prev,
+      ]);
+    } catch (error) {
+      console.error("Website ingest failed", error);
+      setWebsiteError(
+        error instanceof Error
+          ? error.message
+          : "Unable to analyze the provided URL.",
+      );
+    } finally {
+      setWebsiteLoading(false);
+    }
+  };
+
+  const handleWebsiteUrlChange = (value: string) => {
+    setWebsiteUrl(value);
+    if (websiteError) {
+      setWebsiteError(null);
+    }
+  };
+
+  const handlePdfChange = (file: File | null) => {
+    setPdfFile(file);
+    setPdfError(null);
+  };
+
+  const handlePdfUpload = async () => {
+    if (!pdfFile) {
+      setPdfError("Please select a PDF to upload.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", pdfFile);
+
+    setPdfLoading(true);
+    setPdfError(null);
+    try {
+      const response = await fetch("/api/parse-eligibility", {
+        method: "POST",
+        body: formData,
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error ?? "Failed to analyze PDF.");
+      }
+      const payload = (await response.json()) as EligibilityRecordDetail;
+      setSelectedRecord(payload);
+      setPdfFile(null);
+      setSearchResults((prev) => [
+        {
+          id: payload.id,
+          programName: payload.programName,
+          sourceType: payload.sourceType,
+          sourceUrl: payload.sourceUrl,
+          pageTitle: payload.pageTitle,
+          createdAt: payload.createdAt,
+          previewEligibilityText: payload.rawEligibilityText.slice(0, 200),
+        },
+        ...prev,
+      ]);
+    } catch (error) {
+      console.error("PDF ingest failed", error);
+      setPdfError(
+        error instanceof Error
+          ? error.message
+          : "Unable to analyze the uploaded PDF.",
+      );
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
+  const googleSearchUrl =
+    query.length > 0
+      ? `https://www.google.com/search?q=${encodeURIComponent(
+          `${query} homeless services eligibility`,
+        )}`
+      : null;
+
+  return (
+    <div className="space-y-8">
+      <section className="space-y-3 text-center">
+        <Badge variant="slate" className="mx-auto w-fit">
+          Search faster
+        </Badge>
+        <h1 className="text-4xl font-serif font-semibold text-brand-heading">
+          Find eligibility rules in seconds.
+        </h1>
+        <p className="mx-auto max-w-2xl text-base text-brand-muted">
+          Search across programs you’ve already ingested. If we can’t find it, we’ll
+          guide you to the right website or PDF so you can add it in minutes.
+        </p>
+      </section>
+
+      <SearchBar
+        query={query}
+        onChange={handleQueryChange}
+        onSubmit={handleSearch}
+        isLoading={searchStatus === "loading"}
+        showAdvanced={false}
       />
 
-      {activeTab === "pdf" ? (
-        <Card className="bg-brand-slate/80">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-xl">
-              <FileText className="h-5 w-5" aria-hidden="true" />
-              Analyze a program PDF
-            </CardTitle>
-            <p className="text-sm text-brand-gray">
-              Upload one PDF at a time. We parse the text, extract the eligibility
-              section, and store everything securely.
-            </p>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handlePdfSubmit} className="space-y-6">
-              <div className="flex flex-col gap-4 rounded-2xl border border-dashed border-white/10 bg-brand-navy/60 p-6 text-sm text-brand-gray">
-                <label
-                  htmlFor="pdf-file"
-                  className="flex flex-col gap-2 text-brand-white"
-                >
-                  <span className="text-base font-medium text-brand-white">
-                    Program PDF
-                  </span>
-                  <span className="text-sm text-brand-gray">
-                    Upload a single PDF up to 10 MB. Scanned/image-only PDFs may
-                    require manual review.
-                  </span>
-                </label>
-                <Input
-                  ref={fileInputRef}
-                  id="pdf-file"
-                  name="file"
-                  type="file"
-                  accept="application/pdf"
-                  className="cursor-pointer bg-brand-slate/40 file:mr-4 file:rounded-full file:border-0 file:bg-brand-blue file:px-4 file:py-2 file:text-sm file:font-semibold file:text-brand-white hover:file:bg-brand-blue/90"
-                  onChange={handleFileChange}
-                />
-                {pdfFile && (
-                  <div className="flex flex-wrap items-center gap-3 text-xs text-brand-gray">
-                    <Badge variant="slate" className="bg-white/10 text-brand-white">
-                      Selected file
-                    </Badge>
-                    <span className="font-medium text-brand-white">
-                      {pdfFile.name}
-                    </span>
-                    <span className="text-brand-gray/70">
-                      {formatFileSize(pdfFile.size)}
-                    </span>
-                  </div>
-                )}
-                {pdfError && <ErrorBanner message={pdfError} />}
-              </div>
-
-              <div className="flex justify-end">
-                <Button
-                  type="submit"
-                  disabled={isPdfSubmitting}
-                  className="gap-2"
-                >
-                  {isPdfSubmitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                      Analyzing…
-                    </>
-                  ) : (
-                    <>
-                      <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-                      Analyze PDF
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="bg-brand-slate/80">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-xl">
-              <Globe className="h-5 w-5" aria-hidden="true" />
-              Analyze a program website
-            </CardTitle>
-            <p className="text-sm text-brand-gray">
-              Paste the public URL of a program or shelter page. We fetch the page,
-              extract the relevant content, and return a structured eligibility
-              record.
-            </p>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleUrlSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <label
-                  htmlFor="program-url"
-                  className="text-sm font-medium text-brand-white"
-                >
-                  Program page URL
-                </label>
-                <Input
-                  id="program-url"
-                  type="url"
-                  value={urlInput}
-                  onChange={(event) => {
-                    setUrlInput(event.target.value);
-                    setUrlError(null);
-                  }}
-                  placeholder="https://example.org/housing/support-program"
-                />
-                {urlError && <ErrorBanner message={urlError} />}
-              </div>
-
-              <div className="flex justify-end">
-                <Button
-                  type="submit"
-                  disabled={isUrlSubmitting}
-                  className="gap-2"
-                >
-                  {isUrlSubmitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                      Analyzing…
-                    </>
-                  ) : (
-                    <>
-                      <Globe className="h-4 w-4" aria-hidden="true" />
-                      Analyze website
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
+      {searchStatus === "error" && searchError && (
+        <Card>
+          <CardContent className="flex items-center gap-2 text-sm text-brand-orange">
+            <Search className="h-4 w-4" aria-hidden="true" />
+            {searchError}
           </CardContent>
         </Card>
       )}
 
-      {detailLoading && (
-        <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-brand-slate/60 px-4 py-3 text-sm text-brand-gray">
-          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-          Loading record details…
-        </div>
+      {searchStatus === "idle" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>How this works</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-3">
+            <InfoItem
+              title="Search naturally"
+              description="Describe who you’re trying to help or the program you need. We interpret your intent with AI."
+            />
+            <InfoItem
+              title="Review existing data"
+              description="See structured eligibility data from PDFs and websites your team has already ingested."
+            />
+            <InfoItem
+              title="Fill the gaps"
+              description="If we can’t find it, jump straight to Google or add a new program via website or PDF."
+            />
+          </CardContent>
+        </Card>
       )}
 
-      {selectedRecord && <EligibilityResult record={selectedRecord} />}
-
-      <Card className="bg-brand-slate/80">
-        <CardHeader className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div>
-            <Badge variant="slate" className="bg-white/10 text-brand-white">
-              <History className="mr-2 h-3.5 w-3.5" aria-hidden="true" />
-              Recent activity
-            </Badge>
-            <CardTitle className="text-xl text-brand-white">
-              Eligibility records
+      {searchStatus === "success" && searchFilters && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold text-brand-heading">
+              Search filters detected
             </CardTitle>
-            <p className="text-sm text-brand-gray">
-              Search by program name, page title, or source URL. Click a record to
-              reopen its details.
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2 text-sm">
+            {searchFilters.textQuery && (
+              <Badge variant="default">Text: {searchFilters.textQuery}</Badge>
+            )}
+            {searchFilters.populations.map((population) => (
+              <Badge key={population} variant="slate">
+                Population: {population}
+              </Badge>
+            ))}
+            {searchFilters.genderRestriction &&
+              searchFilters.genderRestriction !== "any" && (
+                <Badge variant="slate">
+                  Gender: {searchFilters.genderRestriction.replace(/_/g, " ")}
+                </Badge>
+              )}
+            {searchFilters.locations.map((location) => (
+              <Badge key={location} variant="slate">
+                Location: {location}
+              </Badge>
+            ))}
+            {searchFilters.requirementsInclude.map((req) => (
+              <Badge key={req} variant="slate">
+                Requirement: {req}
+              </Badge>
+            ))}
+            {searchFilters.populations.length === 0 &&
+              searchFilters.locations.length === 0 &&
+              searchFilters.requirementsInclude.length === 0 &&
+              (!searchFilters.genderRestriction ||
+                searchFilters.genderRestriction === "any") && (
+                <span className="text-sm text-brand-muted">
+                  No specific filters detected — showing best matches for your
+                  query.
+                </span>
+              )}
+          </CardContent>
+        </Card>
+      )}
+
+      {searchStatus === "success" && searchResults.length > 0 && (
+        <ResultsSection
+          results={searchResults}
+          loadingRecordId={loadingRecordId}
+          onViewDetails={viewRecordDetails}
+          onAddNew={() => setShowIngestion(true)}
+        />
+      )}
+
+      {noResults && (
+        <Card>
+          <CardHeader>
+            <CardTitle>No matching programs yet</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm text-brand-muted">
+            <p>
+              We couldn’t find any programs that match this search. Try searching the
+              web or ingesting a new program below.
             </p>
-          </div>
-          <form
-            onSubmit={handleSearchSubmit}
-            className="flex w-full flex-col gap-3 md:w-auto md:flex-row"
-          >
-            <div className="relative md:w-72">
-              <Search
-                className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-brand-gray/70"
-                aria-hidden="true"
-              />
-              <Input
-                type="search"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search records"
-                className="pl-9"
-              />
+            <div className="flex flex-wrap gap-3">
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={() => googleSearchUrl && window.open(googleSearchUrl, "_blank")}
+                disabled={!googleSearchUrl}
+              >
+                <Search className="h-4 w-4" aria-hidden="true" />
+                Search the web for this program
+              </Button>
             </div>
-            <select
-              value={sourceFilter}
-              onChange={(event) =>
-                setSourceFilter(event.target.value as "all" | "pdf" | "web")
-              }
-              className="rounded-2xl border border-white/10 bg-brand-navy/60 px-4 py-2 text-sm text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:ring-offset-2 focus:ring-offset-brand-navy"
-            >
-              <option value="all">All sources</option>
-              <option value="pdf">PDFs</option>
-              <option value="web">Websites</option>
-            </select>
-            <Button type="submit" variant="outline">
-              Refresh
-            </Button>
-          </form>
-        </CardHeader>
+          </CardContent>
+        </Card>
+      )}
 
-        <CardContent className="space-y-4">
-          {historyError && <ErrorBanner message={historyError} />}
-          {historyLoading ? (
-            <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-brand-navy/60 px-4 py-3 text-sm text-brand-gray">
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-              Loading recent records…
-            </div>
-          ) : history.length === 0 ? (
-            <div className="rounded-2xl border border-white/10 bg-brand-navy/50 px-4 py-6 text-sm text-brand-gray">
-              No records yet. Ingest a PDF or website to start building your
-              history.
-            </div>
-          ) : (
-            <div className="grid gap-3">
-              {history.map((item) => {
-                const badgeMeta = SOURCE_BADGES[item.sourceType];
-                const isActive = selectedRecord?.id === item.id;
-                const label =
-                  item.programName || item.pageTitle || item.sourceUrl || "Untitled";
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => handleSelectRecord(item.id)}
-                    className={`w-full rounded-2xl border px-5 py-4 text-left transition ${
-                      isActive
-                        ? "border-brand-blue/60 bg-brand-blue/15"
-                        : "border-white/5 bg-brand-navy/40 hover:border-brand-blue/40 hover:bg-brand-navy/60"
-                    }`}
-                  >
-                    <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-3">
-                          <p className="text-sm font-semibold text-brand-white">
-                            {label}
-                          </p>
-                          <Badge
-                            variant="slate"
-                            className={`${badgeMeta.className} border-transparent`}
-                          >
-                            {badgeMeta.label}
-                          </Badge>
-                        </div>
-                        <p className="text-xs text-brand-gray">{item.preview}</p>
-                      </div>
-                      <p className="text-xs text-brand-gray">
-                        {formatDate(item.createdAt)}
-                      </p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {showIngestion && (
+        <IngestionSection
+          websiteUrl={websiteUrl}
+          onWebsiteUrlChange={handleWebsiteUrlChange}
+          onIngestWebsite={handleWebsiteIngest}
+          websiteLoading={websiteLoading}
+          websiteError={websiteError}
+          pdfFile={pdfFile}
+          onPdfChange={handlePdfChange}
+          onUploadPdf={handlePdfUpload}
+          pdfLoading={pdfLoading}
+          pdfError={pdfError}
+        />
+      )}
 
-      <footer className="flex flex-col items-start justify-between gap-3 border-t border-white/10 pt-6 text-xs text-brand-gray md:flex-row md:items-center">
-        <p>© {new Date().getFullYear()} Eligibility Finder. All rights reserved.</p>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/docs/brand"
-            className="underline decoration-dotted underline-offset-4 hover:text-brand-white"
-          >
-            Brand guide
-          </Link>
-          <span className="text-brand-gray/60">•</span>
-          <Link
-            href="mailto:support@eligibilityfinder.org"
-            className="underline decoration-dotted underline-offset-4 hover:text-brand-white"
-          >
-            Contact support
-          </Link>
+      {selectedRecord && (
+        <div className="space-y-3">
+          <h2 className="text-xl font-serif font-semibold text-brand-heading">
+            Program details
+          </h2>
+          <EligibilityResult record={selectedRecord} />
         </div>
-      </footer>
+      )}
     </div>
   );
 }
 
-function detailToSummary(record: EligibilityRecordDetail): EligibilityRecordSummary {
-  return {
-    id: record.id,
-    programName: record.programName,
-    sourceType: record.sourceType,
-    sourceUrl: record.sourceUrl,
-    pageTitle: record.pageTitle,
-    createdAt: record.createdAt,
-    preview: record.rawTextSnippet || record.rawEligibilityText,
-  };
-}
-
-function formatFileSize(bytes: number) {
-  if (bytes === 0) return "0 B";
-  const sizes = ["B", "KB", "MB", "GB"];
-  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), sizes.length - 1);
-  const value = bytes / Math.pow(1024, i);
-  return `${value.toFixed(i === 0 ? 0 : 1)} ${sizes[i]}`;
-}
-
-function formatDate(dateString: string) {
-  return new Date(dateString).toLocaleString();
-}
-
-function ErrorBanner({ message }: { message: string }) {
+function ResultsSection({
+  results,
+  loadingRecordId,
+  onViewDetails,
+  onAddNew,
+}: {
+  results: SearchResult[];
+  loadingRecordId: string | null;
+  onViewDetails: (id: string) => void;
+  onAddNew: () => void;
+}) {
   return (
-    <div className="flex items-center gap-2 rounded-2xl border border-brand-orange/40 bg-brand-orange/15 px-4 py-3 text-xs text-brand-orange">
-      <AlertCircle className="h-4 w-4" aria-hidden="true" />
-      {message}
+    <Card>
+      <CardHeader className="flex items-center justify-between">
+        <CardTitle className="text-lg text-brand-heading">
+          {results.length} result{results.length === 1 ? "" : "s"} found
+        </CardTitle>
+        <Button variant="ghost" className="gap-2 text-brand-muted" onClick={onAddNew}>
+          Still can’t find it?
+          <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </Button>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {results.map((result) => (
+          <div
+            key={result.id}
+            className="rounded-2xl border border-brand-border bg-white p-4 shadow-sm"
+          >
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <div className="space-y-1">
+                <p className="text-base font-semibold text-brand-heading">
+                  {result.programName || result.pageTitle || "Untitled program"}
+                </p>
+                <div className="flex flex-wrap items-center gap-2 text-xs text-brand-muted">
+                  <Badge variant="default">
+                    {result.sourceType === "pdf" ? <FileText className="mr-1 h-3.5 w-3.5" aria-hidden="true" /> : <Globe className="mr-1 h-3.5 w-3.5" aria-hidden="true" />}
+                    {result.sourceType === "pdf" ? "PDF" : "Website"}
+                  </Badge>
+                  {result.sourceUrl && (
+                    <a
+                      href={result.sourceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-brand-blue underline decoration-dotted underline-offset-4 hover:text-brand-heading"
+                    >
+                      View source
+                    </a>
+                  )}
+                  {result.createdAt && (
+                    <span>Updated {new Date(result.createdAt).toLocaleDateString()}</span>
+                  )}
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-2 md:mt-0"
+                onClick={() => onViewDetails(result.id)}
+                disabled={loadingRecordId === result.id}
+              >
+                {loadingRecordId === result.id ? (
+                  <>
+                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                    Loading…
+                  </>
+                ) : (
+                  <>
+                    View details
+                    <ArrowRight className="ml-1 h-3 w-3" aria-hidden="true" />
+                  </>
+                )}
+              </Button>
+            </div>
+            <p className="mt-3 line-clamp-3 text-sm text-brand-muted">
+              {result.previewEligibilityText}
+            </p>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+function IngestionSection({
+  websiteUrl,
+  onWebsiteUrlChange,
+  onIngestWebsite,
+  websiteLoading,
+  websiteError,
+  pdfFile,
+  onPdfChange,
+  onUploadPdf,
+  pdfLoading,
+  pdfError,
+}: {
+  websiteUrl: string;
+  onWebsiteUrlChange: (value: string) => void;
+  onIngestWebsite: () => void;
+  websiteLoading: boolean;
+  websiteError: string | null;
+  pdfFile: File | null;
+  onPdfChange: (file: File | null) => void;
+  onUploadPdf: () => void;
+  pdfLoading: boolean;
+  pdfError: string | null;
+}) {
+  return (
+    <div className="grid gap-6 md:grid-cols-2">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-brand-heading">
+            <Globe className="h-5 w-5" aria-hidden="true" />
+            Add a program from a website
+          </CardTitle>
+          <p className="text-sm text-brand-muted">
+            Once you find the correct program page, paste the URL here. We’ll parse
+            and store the eligibility rules.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Input
+            value={websiteUrl}
+            onChange={(event) => {
+              onWebsiteUrlChange(event.target.value);
+            }}
+            placeholder="https://example.org/program/intake"
+            type="url"
+          />
+          {websiteError && (
+            <p className="text-xs text-brand-orange">{websiteError}</p>
+          )}
+          <Button
+            onClick={onIngestWebsite}
+            disabled={websiteLoading}
+            className="w-full gap-2"
+          >
+            {websiteLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                Parsing website…
+              </>
+            ) : (
+              <>
+                Analyze website
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-brand-heading">
+            <FileText className="h-5 w-5" aria-hidden="true" />
+            Upload a program PDF
+          </CardTitle>
+          <p className="text-sm text-brand-muted">
+            If you have the flyer or intake packet as a PDF, upload it and we’ll
+            extract the eligibility rules automatically.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Input
+            type="file"
+            accept="application/pdf"
+            onChange={(event) => onPdfChange(event.target.files?.[0] ?? null)}
+          />
+          {pdfFile && (
+            <p className="text-xs text-brand-muted">
+              Selected file:{" "}
+              <span className="font-medium text-brand-heading">{pdfFile.name}</span>
+            </p>
+          )}
+          {pdfError && <p className="text-xs text-brand-orange">{pdfError}</p>}
+          <Button
+            onClick={onUploadPdf}
+            disabled={pdfLoading}
+            className="w-full gap-2"
+          >
+            {pdfLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                Uploading PDF…
+              </>
+            ) : (
+              <>
+                Upload PDF
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function InfoItem({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-brand-border bg-brand-background p-4">
+      <h3 className="text-base font-semibold text-brand-heading">{title}</h3>
+      <p className="mt-2 text-sm text-brand-muted">{description}</p>
     </div>
   );
 }

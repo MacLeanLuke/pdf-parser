@@ -90,25 +90,25 @@ export function EligibilityResult({ record }: { record: EligibilityRecordDetail 
   const SourceIcon = SOURCE_META[record.sourceType].icon;
 
   return (
-    <Card className="space-y-6 bg-brand-slate/80">
+    <Card className="space-y-6">
       <CardHeader className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="space-y-2">
-          <Badge className="gap-2 bg-brand-blue/15 text-brand-blue">
+          <Badge className="gap-2">
             <SourceIcon className="h-3.5 w-3.5" aria-hidden="true" />
             {SOURCE_META[record.sourceType].label}
           </Badge>
-          <CardTitle className="text-2xl font-semibold text-brand-white">
+          <CardTitle className="text-2xl font-semibold text-brand-heading">
             {heading}
           </CardTitle>
-          <p className="flex items-center gap-2 text-sm text-brand-gray">
+          <p className="flex flex-wrap items-center gap-2 text-sm text-brand-muted">
             <CalendarDays className="h-4 w-4" aria-hidden="true" />
             Captured {formatDateTime(record.createdAt)}
             {record.sourceUrl && (
               <>
-                <span className="text-brand-gray/60">•</span>
+                <span className="text-brand-border">•</span>
                 <Link
                   href={record.sourceUrl}
-                  className="inline-flex items-center gap-1 text-brand-blue underline decoration-dotted underline-offset-4 hover:text-brand-white"
+                  className="inline-flex items-center gap-1 text-brand-blue underline decoration-dotted underline-offset-4 hover:text-brand-heading"
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -120,36 +120,36 @@ export function EligibilityResult({ record }: { record: EligibilityRecordDetail 
           </p>
         </div>
         {record.pageTitle && record.sourceType === "web" && (
-          <div className="rounded-2xl border border-white/5 bg-white/5 px-4 py-3 text-sm text-brand-gray">
-            <span className="font-semibold text-brand-white">Page title:</span>{" "}
+          <div className="max-w-sm rounded-2xl border border-brand-border bg-brand-background px-4 py-3 text-sm text-brand-muted">
+            <span className="font-semibold text-brand-heading">Page title:</span>{" "}
             {record.pageTitle}
           </div>
         )}
       </CardHeader>
       <CardContent className="space-y-6">
         <div>
-          <h3 className="text-sm font-semibold uppercase tracking-[0.25em] text-brand-gray">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-muted">
             Extracted eligibility section
           </h3>
-          <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap rounded-2xl border border-white/5 bg-brand-navy/60 p-4 text-sm leading-relaxed text-brand-white/90 shadow-card-soft">
+          <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap rounded-2xl border border-brand-border bg-brand-background p-4 text-sm leading-relaxed text-brand-body">
             {record.rawEligibilityText}
           </pre>
         </div>
 
         <div>
-          <h3 className="text-sm font-semibold uppercase tracking-[0.25em] text-brand-gray">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-muted">
             Structured eligibility
           </h3>
           <dl className="mt-4 grid gap-4 md:grid-cols-2">
             {structuredFields.map((field) => (
               <div
                 key={field.label}
-                className="rounded-2xl border border-white/5 bg-white/5 p-4"
+                className="rounded-2xl border border-brand-border bg-brand-background p-4"
               >
-                <dt className="text-xs font-semibold uppercase tracking-[0.25em] text-brand-gray">
+                <dt className="text-xs font-semibold uppercase tracking-[0.3em] text-brand-muted">
                   {field.label}
                 </dt>
-                <dd className="mt-2 text-sm text-brand-white">
+                <dd className="mt-2 text-sm text-brand-heading">
                   {Array.isArray(field.value) ? (
                     field.value.length ? (
                       <div className="flex flex-wrap gap-2">
@@ -157,11 +157,11 @@ export function EligibilityResult({ record }: { record: EligibilityRecordDetail 
                           <Badge
                             key={value}
                             variant={
-                              field.label === "Population" ? "slate" : "default"
+                              field.label === "Population" ? "default" : "slate"
                             }
                             className={cn(
                               field.label === "Population" &&
-                                "bg-brand-blue/15 text-brand-blue",
+                                "bg-brand-blue/10 text-brand-blue",
                             )}
                           >
                             {humanize(value)}
@@ -169,7 +169,7 @@ export function EligibilityResult({ record }: { record: EligibilityRecordDetail 
                         ))}
                       </div>
                     ) : (
-                      <span className="text-brand-gray">—</span>
+                      <span className="text-brand-muted">—</span>
                     )
                   ) : (
                     <span>{field.value}</span>
@@ -180,21 +180,21 @@ export function EligibilityResult({ record }: { record: EligibilityRecordDetail 
           </dl>
         </div>
 
-        <details className="group rounded-2xl border border-white/5 bg-brand-navy/50 p-4">
-          <summary className="cursor-pointer text-sm font-semibold text-brand-white">
+        <details className="group rounded-2xl border border-brand-border bg-brand-background p-4">
+          <summary className="cursor-pointer text-sm font-semibold text-brand-heading">
             View raw JSON
           </summary>
-          <pre className="mt-3 max-h-72 overflow-auto rounded-2xl bg-brand-slate/80 p-4 text-xs text-brand-gray">
+          <pre className="mt-3 max-h-72 overflow-auto rounded-2xl bg-white p-4 text-xs text-brand-muted">
             {JSON.stringify(record.eligibility, null, 2)}
           </pre>
         </details>
 
         {record.rawTextSnippet && (
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-[0.25em] text-brand-gray">
+            <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-muted">
               Raw text snippet
             </h3>
-            <pre className="mt-3 max-h-48 overflow-auto whitespace-pre-wrap rounded-2xl border border-white/5 bg-brand-navy/60 p-4 text-xs leading-relaxed text-brand-gray">
+            <pre className="mt-3 max-h-48 overflow-auto whitespace-pre-wrap rounded-2xl border border-brand-border bg-brand-background p-4 text-xs leading-relaxed text-brand-muted">
               {record.rawTextSnippet}
             </pre>
           </div>

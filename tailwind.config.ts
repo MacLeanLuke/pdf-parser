@@ -17,6 +17,12 @@ const config: Config = {
           white: "#F8FAFC",
           green: "#10B981",
           orange: "#F97316",
+          background: "#F9FAFB",
+          surface: "#FFFFFF",
+          border: "#E5E7EB",
+          heading: "#111827",
+          body: "#374151",
+          muted: "#6B7280",
         },
       },
       fontFamily: {
@@ -24,8 +30,8 @@ const config: Config = {
         serif: ["var(--font-serif)", "serif"],
       },
       boxShadow: {
-        card: "0 20px 45px -25px rgba(15, 23, 42, 0.55)",
-        "card-soft": "0 12px 32px -20px rgba(15, 23, 42, 0.6)",
+        card: "0 16px 40px -28px rgba(15, 23, 42, 0.3)",
+        "card-soft": "0 12px 32px -24px rgba(15, 23, 42, 0.25)",
       },
       borderRadius: {
         "2xl": "1.25rem",

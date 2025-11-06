@@ -21,12 +21,13 @@ Eligibility Finder is a Next.js 14 (App Router) application that ingests program
 - **API Routes**:
   - `POST /api/parse-eligibility` handles PDF uploads, parsing, AI extraction, persistence, and JSON response.
   - `POST /api/parse-url` fetches a website, extracts readable text, runs the same eligibility pipeline, and stores the row with `sourceType = "web"`.
+  - `POST /api/search-eligibility` interprets natural language queries with the OpenAI SDK and returns matching records from Postgres.
   - `GET /api/eligibility-records` lists/searches records with optional text/source filters.
   - `GET /api/eligibility-records/[id]` returns the full details for a single record.
 
 ### Frontend
 
-- Single-page interface (`app/page.tsx`) with tabs for PDF upload and website ingestion, a shared result viewer, and a searchable history panel.
+- Search-first interface (`app/page.tsx`) with AI-augmented results, fallback ingestion flows (website/PDF), and a shared eligibility detail view.
 - Tailwind CSS with a custom brand system (see `components/ui/*` and `app/docs/brand/page.tsx`) keeps visuals cohesive.
 
 ### Environment

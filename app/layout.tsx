@@ -40,9 +40,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
+      <body className="bg-brand-background text-brand-body">
         <Header />
-        <main className="mx-auto w-full max-w-6xl px-4 pb-16 pt-12 md:px-6">
+        <main className="mx-auto w-full max-w-4xl px-4 pb-16 pt-10">
           {children}
         </main>
         <Analytics />

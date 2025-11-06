@@ -2,10 +2,10 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = {
-  default: "bg-brand-blue/20 text-brand-white border border-brand-blue/40",
-  success: "bg-brand-green/20 text-brand-green border border-brand-green/30",
-  warning: "bg-brand-orange/20 text-brand-orange border border-brand-orange/40",
-  slate: "bg-white/10 text-brand-white border border-white/10",
+  default: "bg-brand-blue/10 text-brand-blue border border-brand-blue/20",
+  success: "bg-brand-green/10 text-brand-green border border-brand-green/20",
+  warning: "bg-brand-orange/10 text-brand-orange border border-brand-orange/20",
+  slate: "bg-brand-background text-brand-muted border border-brand-border",
 } as const;
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
