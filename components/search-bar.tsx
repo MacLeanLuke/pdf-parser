@@ -36,14 +36,15 @@ export function SearchBar({
         <Input
           value={query}
           onChange={(event) => onChange(event.target.value)}
-          placeholder="Search for a program or describe what you need…"
+          placeholder="Search for a shelter, program, or describe what you need…"
+          aria-label="Search for shelter, food, or other support services"
           className="h-14 rounded-2xl border-brand-border bg-brand-background pl-12 text-base font-medium text-brand-heading placeholder:text-brand-muted"
         />
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="text-xs text-brand-muted">
-          Try searches like “women’s shelter in Plano accepting families” or “Dallas
-          rapid rehousing income limits”.
+          Try “bed tonight near Plano”, “family shelter that accepts teen boys”, or
+          “Section 8 housing voucher help”.
         </div>
         <div className="flex items-center gap-2">
           {showAdvanced && (
@@ -64,7 +65,7 @@ export function SearchBar({
             ) : (
               <>
                 <Search className="h-4 w-4" aria-hidden="true" />
-                Search
+                Search for help
               </>
             )}
           </Button>

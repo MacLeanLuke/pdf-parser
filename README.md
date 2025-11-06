@@ -7,7 +7,7 @@ Eligibility Finder is a production-ready Next.js 14 application that helps housi
 - AI-assisted search bar that interprets natural language queries to surface relevant programs.
 - Upload a single PDF and trigger server-side parsing with `pdf-parse`.
 - Analyze eligibility directly from public program web pages with the same schema.
-- Extract eligibility rules using OpenAI (configurable model) and a strict Zod schema.
+- Extract key service details (who it helps, requirements, location) using OpenAI with a strict Zod schema.
 - Persist raw text, extracted eligibility text, and the full structured JSON in PostgreSQL.
 - View results immediately including the eligibility excerpt, structured fields, and a debug JSON view.
 - Browse and search past ingestions (PDF or web) from the unified history view.

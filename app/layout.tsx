@@ -10,14 +10,15 @@ const appUrl =
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
   title: "Eligibility Finder",
-  description: "Clarity from complexity — faster eligibility for everyone.",
+  description:
+    "Find shelter, food, medical care, and longer-term support for people experiencing homelessness.",
   icons: {
     icon: "/favicon.svg",
   },
   openGraph: {
     title: "Eligibility Finder",
     description:
-      "Clarity from complexity — faster eligibility for everyone.",
+      "Find shelter, food, medical care, and longer-term support for people experiencing homelessness.",
     url: "https://pdf-parser-git-main-macleanlukes-projects.vercel.app/",
     siteName: "Eligibility Finder",
     images: [
@@ -33,7 +34,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Eligibility Finder",
     description:
-      "Clarity from complexity — faster eligibility for everyone.",
+      "Find shelter, food, medical care, and longer-term support for people experiencing homelessness.",
     images: ["/og-image.svg"],
   },
 };

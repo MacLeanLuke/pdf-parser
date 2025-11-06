@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "We could not find an eligibility section in this PDF. Please ensure the document contains explicit eligibility text.",
+            "We couldn’t find clear service details in this PDF. Make sure the file describes who the service helps and what someone needs to do next.",
         },
         { status: 422 },
       );

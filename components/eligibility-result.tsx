@@ -1,10 +1,9 @@
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import type { Eligibility } from "@/lib/eligibility-schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Globe, FileText, CalendarDays, Link as LinkIcon } from "lucide-react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 
 type EligibilityRecordDetail = {
   programName: string | null;
@@ -21,8 +20,8 @@ const SOURCE_META: Record<
   EligibilityRecordDetail["sourceType"],
   { label: string; icon: typeof FileText }
 > = {
-  pdf: { label: "PDF", icon: FileText },
-  web: { label: "Website", icon: Globe },
+  pdf: { label: "Saved from PDF file", icon: FileText },
+  web: { label: "Saved from website page", icon: Globe },
 };
 
 function formatDateTime(value: string | null) {
@@ -38,54 +37,42 @@ function humanize(value: string) {
 }
 
 export function EligibilityResult({ record }: { record: EligibilityRecordDetail }) {
-  const structuredFields = useMemo(() => {
+  const details = useMemo(() => {
     const { eligibility } = record;
 
-    return [
-      {
-        label: "Population",
-        value: eligibility.population,
-      },
-      {
-        label: "Gender Restriction",
-        value: eligibility.genderRestriction
-          ? humanize(eligibility.genderRestriction)
-          : "any",
-      },
-      {
-        label: "Requirements",
-        value: eligibility.requirements,
-      },
-      {
-        label: "Location Constraints",
-        value: eligibility.locationConstraints,
-      },
-      {
-        label: "Max Stay (days)",
-        value:
-          eligibility.maxStayDays !== null && eligibility.maxStayDays !== undefined
-            ? String(eligibility.maxStayDays)
-            : "—",
-      },
-      {
-        label: "Age Range",
-        value:
-          eligibility.ageRange.min || eligibility.ageRange.max
-            ? `${eligibility.ageRange.min ?? "—"} – ${eligibility.ageRange.max ?? "—"}`
-            : "—",
-      },
-      {
-        label: "Notes",
-        value: eligibility.notes?.trim() ? eligibility.notes : "—",
-      },
-    ];
+    const genderLabel =
+      eligibility.genderRestriction && eligibility.genderRestriction !== "any"
+        ? humanize(eligibility.genderRestriction)
+        : "Anyone";
+
+    const ageLabel =
+      eligibility.ageRange.min || eligibility.ageRange.max
+        ? `${eligibility.ageRange.min ?? "any age"} to ${
+            eligibility.ageRange.max ?? "any age"
+          }`
+        : "All ages";
+
+    const maxStay =
+      eligibility.maxStayDays !== null && eligibility.maxStayDays !== undefined
+        ? `${eligibility.maxStayDays} day${eligibility.maxStayDays === 1 ? "" : "s"}`
+        : null;
+
+    return {
+      populations: eligibility.population,
+      gender: genderLabel,
+      ageRange: ageLabel,
+      requirements: eligibility.requirements,
+      locations: eligibility.locationConstraints,
+      maxStay,
+      notes: eligibility.notes?.trim() ?? "",
+    };
   }, [record]);
 
   const heading =
     record.programName ||
     record.pageTitle ||
     record.sourceUrl ||
-    "Unknown program";
+    "Service name coming soon";
 
   const SourceIcon = SOURCE_META[record.sourceType].icon;
 
@@ -127,62 +114,78 @@ export function EligibilityResult({ record }: { record: EligibilityRecordDetail 
         )}
       </CardHeader>
       <CardContent className="space-y-6">
+        <SectionBlock title="Who this helps">
+          <div className="flex flex-wrap gap-2">
+            {details.populations.length ? (
+              details.populations.map((population) => (
+                <Badge key={population} variant="slate">
+                  {humanize(population)}
+                </Badge>
+              ))
+            ) : (
+              <Badge variant="slate">Anyone welcome</Badge>
+            )}
+            <Badge variant="slate">{details.gender}</Badge>
+            <Badge variant="slate">{details.ageRange}</Badge>
+          </div>
+        </SectionBlock>
+
+        <SectionBlock title="What’s required">
+          {details.requirements.length ? (
+            <div className="flex flex-wrap gap-2">
+              {details.requirements.map((req) => (
+                <Badge key={req} variant="slate">
+                  {humanize(req)}
+                </Badge>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-brand-muted">
+              No specific requirements were mentioned in the document.
+            </p>
+          )}
+        </SectionBlock>
+
+        <SectionBlock title="Where it is">
+          {details.locations.length ? (
+            <div className="flex flex-wrap gap-2">
+              {details.locations.map((location) => (
+                <Badge key={location} variant="slate">
+                  {location}
+                </Badge>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-brand-muted">
+              The page didn’t list a specific city or service area.
+            </p>
+          )}
+        </SectionBlock>
+
+        <SectionBlock title="How long you can stay">
+          <p className="text-sm text-brand-muted">
+            {details.maxStay ?? "Stay length wasn’t specified."}
+          </p>
+        </SectionBlock>
+
+        <SectionBlock title="Anything else to know">
+          <p className="text-sm text-brand-muted">
+            {details.notes || "No additional notes were provided."}
+          </p>
+        </SectionBlock>
+
         <div>
           <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-muted">
-            Extracted eligibility section
+            Details from the source
           </h3>
           <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap rounded-2xl border border-brand-border bg-brand-background p-4 text-sm leading-relaxed text-brand-body">
             {record.rawEligibilityText}
           </pre>
         </div>
 
-        <div>
-          <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-muted">
-            Structured eligibility
-          </h3>
-          <dl className="mt-4 grid gap-4 md:grid-cols-2">
-            {structuredFields.map((field) => (
-              <div
-                key={field.label}
-                className="rounded-2xl border border-brand-border bg-brand-background p-4"
-              >
-                <dt className="text-xs font-semibold uppercase tracking-[0.3em] text-brand-muted">
-                  {field.label}
-                </dt>
-                <dd className="mt-2 text-sm text-brand-heading">
-                  {Array.isArray(field.value) ? (
-                    field.value.length ? (
-                      <div className="flex flex-wrap gap-2">
-                        {field.value.map((value) => (
-                          <Badge
-                            key={value}
-                            variant={
-                              field.label === "Population" ? "default" : "slate"
-                            }
-                            className={cn(
-                              field.label === "Population" &&
-                                "bg-brand-blue/10 text-brand-blue",
-                            )}
-                          >
-                            {humanize(value)}
-                          </Badge>
-                        ))}
-                      </div>
-                    ) : (
-                      <span className="text-brand-muted">—</span>
-                    )
-                  ) : (
-                    <span>{field.value}</span>
-                  )}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-
         <details className="group rounded-2xl border border-brand-border bg-brand-background p-4">
           <summary className="cursor-pointer text-sm font-semibold text-brand-heading">
-            View raw JSON
+            View the structured data
           </summary>
           <pre className="mt-3 max-h-72 overflow-auto rounded-2xl bg-white p-4 text-xs text-brand-muted">
             {JSON.stringify(record.eligibility, null, 2)}
@@ -192,7 +195,7 @@ export function EligibilityResult({ record }: { record: EligibilityRecordDetail 
         {record.rawTextSnippet && (
           <div>
             <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-muted">
-              Raw text snippet
+              Quick summary from the source
             </h3>
             <pre className="mt-3 max-h-48 overflow-auto whitespace-pre-wrap rounded-2xl border border-brand-border bg-brand-background p-4 text-xs leading-relaxed text-brand-muted">
               {record.rawTextSnippet}
@@ -205,3 +208,14 @@ export function EligibilityResult({ record }: { record: EligibilityRecordDetail 
 }
 
 export default EligibilityResult;
+
+function SectionBlock({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="space-y-2">
+      <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-muted">
+        {title}
+      </h3>
+      {children}
+    </div>
+  );
+}

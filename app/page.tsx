@@ -252,7 +252,7 @@ export default function Home() {
   const googleSearchUrl =
     query.length > 0
       ? `https://www.google.com/search?q=${encodeURIComponent(
-          `${query} homeless services eligibility`,
+          `${query} homeless services support`,
         )}`
       : null;
 
@@ -260,14 +260,15 @@ export default function Home() {
     <div className="space-y-8">
       <section className="space-y-3 text-center">
         <Badge variant="slate" className="mx-auto w-fit">
-          Search faster
+          Find help fast
         </Badge>
         <h1 className="text-4xl font-serif font-semibold text-brand-heading">
-          Find eligibility rules in seconds.
+          Find shelter, food, and support — fast.
         </h1>
         <p className="mx-auto max-w-2xl text-base text-brand-muted">
-          Search across programs you’ve already ingested. If we can’t find it, we’ll
-          guide you to the right website or PDF so you can add it in minutes.
+          Search across services your team has already saved. If we don’t have the
+          right shelter or program yet, we’ll help you add it from a website or PDF in
+          just a few minutes.
         </p>
       </section>
 
@@ -295,16 +296,16 @@ export default function Home() {
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-3">
             <InfoItem
-              title="Search naturally"
-              description="Describe who you’re trying to help or the program you need. We interpret your intent with AI."
+              title="Tell us what you need"
+              description="Describe your situation or the person you’re helping in your own words. We use AI to figure out what kind of help to look for."
             />
             <InfoItem
-              title="Review existing data"
-              description="See structured eligibility data from PDFs and websites your team has already ingested."
+              title="See services we already know about"
+              description="We’ll show shelters, programs, and resources your team has saved, including who they help and how to get in."
             />
             <InfoItem
-              title="Fill the gaps"
-              description="If we can’t find it, jump straight to Google or add a new program via website or PDF."
+              title="Add a new service when needed"
+              description="If we don’t have it yet, we’ll guide you to the right website or PDF and pull out the important details for you."
             />
           </CardContent>
         </Card>
@@ -314,32 +315,32 @@ export default function Home() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg font-semibold text-brand-heading">
-              Search filters detected
+              Here’s how we understood your search
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2 text-sm">
             {searchFilters.textQuery && (
-              <Badge variant="default">Text: {searchFilters.textQuery}</Badge>
+              <Badge variant="default">Need: {searchFilters.textQuery}</Badge>
             )}
-            {searchFilters.populations.map((population) => (
-              <Badge key={population} variant="slate">
-                Population: {population}
-              </Badge>
-            ))}
-            {searchFilters.genderRestriction &&
-              searchFilters.genderRestriction !== "any" && (
-                <Badge variant="slate">
-                  Gender: {searchFilters.genderRestriction.replace(/_/g, " ")}
-                </Badge>
-              )}
             {searchFilters.locations.map((location) => (
               <Badge key={location} variant="slate">
                 Location: {location}
               </Badge>
             ))}
+            {searchFilters.populations.map((population) => (
+              <Badge key={population} variant="slate">
+                Helps: {population}
+              </Badge>
+            ))}
+            {searchFilters.genderRestriction &&
+              searchFilters.genderRestriction !== "any" && (
+                <Badge variant="slate">
+                  Gender focus: {searchFilters.genderRestriction.replace(/_/g, " ")}
+                </Badge>
+              )}
             {searchFilters.requirementsInclude.map((req) => (
               <Badge key={req} variant="slate">
-                Requirement: {req}
+                Needs: {req}
               </Badge>
             ))}
             {searchFilters.populations.length === 0 &&
@@ -348,8 +349,8 @@ export default function Home() {
               (!searchFilters.genderRestriction ||
                 searchFilters.genderRestriction === "any") && (
                 <span className="text-sm text-brand-muted">
-                  No specific filters detected — showing best matches for your
-                  query.
+                  We didn’t pick out any specific filters, so we’re showing the closest
+                  matches to your words.
                 </span>
               )}
           </CardContent>
@@ -368,12 +369,14 @@ export default function Home() {
       {noResults && (
         <Card>
           <CardHeader>
-            <CardTitle>No matching programs yet</CardTitle>
+            <CardTitle className="text-brand-heading">
+              We don’t see a matching service yet
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-sm text-brand-muted">
             <p>
-              We couldn’t find any programs that match this search. Try searching the
-              web or ingesting a new program below.
+              Try adjusting your words, or use the options below to search the web and
+              add a new shelter or program from a website or PDF.
             </p>
             <div className="flex flex-wrap gap-3">
               <Button
@@ -383,7 +386,7 @@ export default function Home() {
                 disabled={!googleSearchUrl}
               >
                 <Search className="h-4 w-4" aria-hidden="true" />
-                Search the web for this program
+                Search the web for this
               </Button>
             </div>
           </CardContent>
@@ -408,7 +411,7 @@ export default function Home() {
       {selectedRecord && (
         <div className="space-y-3">
           <h2 className="text-xl font-serif font-semibold text-brand-heading">
-            Program details
+            Service details
           </h2>
           <EligibilityResult record={selectedRecord} />
         </div>
@@ -432,10 +435,10 @@ function ResultsSection({
     <Card>
       <CardHeader className="flex items-center justify-between">
         <CardTitle className="text-lg text-brand-heading">
-          {results.length} result{results.length === 1 ? "" : "s"} found
+          Services that may fit ({results.length})
         </CardTitle>
         <Button variant="ghost" className="gap-2 text-brand-muted" onClick={onAddNew}>
-          Still can’t find it?
+          Need to add a service?
           <ArrowRight className="h-4 w-4" aria-hidden="true" />
         </Button>
       </CardHeader>
@@ -448,12 +451,12 @@ function ResultsSection({
             <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
               <div className="space-y-1">
                 <p className="text-base font-semibold text-brand-heading">
-                  {result.programName || result.pageTitle || "Untitled program"}
+                  {result.programName || result.pageTitle || "Service name coming soon"}
                 </p>
                 <div className="flex flex-wrap items-center gap-2 text-xs text-brand-muted">
                   <Badge variant="default">
                     {result.sourceType === "pdf" ? <FileText className="mr-1 h-3.5 w-3.5" aria-hidden="true" /> : <Globe className="mr-1 h-3.5 w-3.5" aria-hidden="true" />}
-                    {result.sourceType === "pdf" ? "PDF" : "Website"}
+                    {result.sourceType === "pdf" ? "Added from PDF" : "Added from website"}
                   </Badge>
                   {result.sourceUrl && (
                     <a
@@ -462,7 +465,7 @@ function ResultsSection({
                       rel="noreferrer"
                       className="inline-flex items-center gap-1 text-brand-blue underline decoration-dotted underline-offset-4 hover:text-brand-heading"
                     >
-                      View source
+                      Open source page
                     </a>
                   )}
                   {result.createdAt && (
@@ -484,14 +487,17 @@ function ResultsSection({
                   </>
                 ) : (
                   <>
-                    View details
+                    See service details
                     <ArrowRight className="ml-1 h-3 w-3" aria-hidden="true" />
                   </>
                 )}
               </Button>
             </div>
             <p className="mt-3 line-clamp-3 text-sm text-brand-muted">
-              {result.previewEligibilityText}
+              Who it helps:{" "}
+              {result.previewEligibilityText.trim().length
+                ? result.previewEligibilityText
+                : "We’re still gathering details for this service."}
             </p>
           </div>
         ))}
@@ -529,11 +535,11 @@ function IngestionSection({
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-brand-heading">
             <Globe className="h-5 w-5" aria-hidden="true" />
-            Add a program from a website
+            Add a service from a website
           </CardTitle>
           <p className="text-sm text-brand-muted">
-            Once you find the correct program page, paste the URL here. We’ll parse
-            and store the eligibility rules.
+            Paste a public webpage that describes a shelter, program, or resource. We
+            pull out who it helps, where it is, and what someone needs to get in.
           </p>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -556,11 +562,11 @@ function IngestionSection({
             {websiteLoading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                Parsing website…
+                Scanning website…
               </>
             ) : (
               <>
-                Analyze website
+                Scan this website for service details
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </>
             )}
@@ -572,11 +578,12 @@ function IngestionSection({
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-brand-heading">
             <FileText className="h-5 w-5" aria-hidden="true" />
-            Upload a program PDF
+            Add a service from a PDF
           </CardTitle>
           <p className="text-sm text-brand-muted">
-            If you have the flyer or intake packet as a PDF, upload it and we’ll
-            extract the eligibility rules automatically.
+            Upload a flyer, intake packet, or program overview as a PDF. We’ll scan it
+            for who the service helps and what’s required, then save it for future
+            searches.
           </p>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -600,11 +607,11 @@ function IngestionSection({
             {pdfLoading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                Uploading PDF…
+                Scanning PDF…
               </>
             ) : (
               <>
-                Upload PDF
+                Scan this PDF for service details
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </>
             )}

@@ -113,16 +113,17 @@ export default function RecordsPage() {
     <div className="space-y-6">
       <header className="space-y-2">
         <h1 className="text-3xl font-serif font-semibold text-brand-heading">
-          Program records
+          Saved services
         </h1>
         <p className="text-sm text-brand-muted">
-          Browse and reopen eligibility data already ingested by your team.
+          A list of shelters, programs, and local resources your team has added. Open
+          any service to see who it helps, how to qualify, and what to do next.
         </p>
       </header>
 
       <Card>
         <CardHeader className="space-y-3">
-          <CardTitle className="text-lg text-brand-heading">Search records</CardTitle>
+          <CardTitle className="text-lg text-brand-heading">Search saved services</CardTitle>
           <div className="flex flex-col gap-3 md:flex-row">
             <div className="relative flex-1">
               <Search
@@ -151,7 +152,7 @@ export default function RecordsPage() {
                   </>
                 ) : (
                   <>
-                    Search
+                    Search saved services
                     <Search className="ml-2 h-4 w-4" aria-hidden="true" />
                   </>
                 )}
@@ -166,7 +167,7 @@ export default function RecordsPage() {
                 }}
                 disabled={loading}
               >
-                Reset
+                Clear
               </Button>
             </div>
           </div>
@@ -192,10 +193,10 @@ export default function RecordsPage() {
                   className="rounded-2xl border border-brand-border bg-white p-4 shadow-sm transition hover:border-brand-blue/60 hover:shadow-md"
                 >
                   <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                    <div className="space-y-1">
-                      <p className="text-base font-semibold text-brand-heading">
-                        {record.programName || record.pageTitle || "Untitled program"}
-                      </p>
+                      <div className="space-y-1">
+                        <p className="text-base font-semibold text-brand-heading">
+                          {record.programName || record.pageTitle || "Service name coming soon"}
+                        </p>
                       <div className="flex flex-wrap items-center gap-2 text-xs text-brand-muted">
                         <Badge variant="default">
                           {record.sourceType === "pdf" ? (
@@ -207,7 +208,7 @@ export default function RecordsPage() {
                         </Badge>
                         {record.createdAt && (
                           <span>
-                            Added {new Date(record.createdAt).toLocaleDateString()}
+                            Last updated {new Date(record.createdAt).toLocaleDateString()}
                           </span>
                         )}
                         {record.sourceUrl && (
@@ -217,22 +218,25 @@ export default function RecordsPage() {
                         )}
                       </div>
                     </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="mt-2 inline-flex items-center gap-2 text-brand-muted md:mt-0"
-                    >
-                      View details
-                      <Search className="h-3.5 w-3.5" aria-hidden="true" />
-                    </Button>
-                  </div>
-                  <p className="mt-2 line-clamp-2 text-sm text-brand-muted">
-                    {record.previewEligibilityText}
-                  </p>
-                </Link>
-              ))}
-            </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="mt-2 inline-flex items-center gap-2 text-brand-muted md:mt-0"
+                      >
+                        See service details
+                        <Search className="h-3.5 w-3.5" aria-hidden="true" />
+                      </Button>
+                    </div>
+                    <p className="mt-2 line-clamp-2 text-sm text-brand-muted">
+                      Who it helps:{" "}
+                      {record.previewEligibilityText.trim().length
+                        ? record.previewEligibilityText
+                        : "Details coming soon."}
+                    </p>
+                  </Link>
+                ))}
+              </div>
           )}
         </CardContent>
       </Card>

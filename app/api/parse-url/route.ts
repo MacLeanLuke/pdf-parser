@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "We parsed the page but could not identify any explicit eligibility language. Please verify the page contains eligibility details.",
+            "We read the page but couldn’t find clear information about who the service helps or what’s required. Please double-check the page or choose another source.",
         },
         { status: 422 },
       );

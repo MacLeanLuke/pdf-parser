@@ -70,7 +70,7 @@ export default async function RecordPage({
         className="inline-flex items-center gap-2 rounded-full border border-brand-border px-4 py-2 text-sm font-medium text-brand-muted transition hover:bg-brand-background hover:text-brand-heading"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-        Back to workspace
+        Back to search
       </Link>
 
       <Card>
@@ -80,15 +80,15 @@ export default async function RecordPage({
             {sourceMeta.label}
           </Badge>
           <CardTitle className="text-3xl font-semibold text-brand-heading">
-            {record.programName || record.pageTitle || "Eligibility record"}
+            {record.programName || record.pageTitle || "Service record"}
           </CardTitle>
           <p className="text-sm text-brand-muted">
-            Captured on {new Date(record.createdAt).toLocaleString()}
+            Saved on {new Date(record.createdAt).toLocaleString()}
           </p>
         </CardHeader>
         <CardContent className="space-y-4 text-sm text-brand-muted">
           <div className="flex flex-wrap items-center gap-3">
-            <span className="text-brand-heading">Record ID:</span>
+            <span className="text-brand-heading">Service ID:</span>
             <code className="rounded-full bg-brand-background px-3 py-1 text-xs text-brand-muted">
               {record.id}
             </code>
@@ -101,7 +101,7 @@ export default async function RecordPage({
               className="inline-flex items-center gap-2 text-brand-blue underline decoration-dotted underline-offset-4 hover:text-brand-heading"
             >
               <LinkIcon className="h-4 w-4" aria-hidden="true" />
-              View source
+              View source page
             </Link>
           )}
         </CardContent>

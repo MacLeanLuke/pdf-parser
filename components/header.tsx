@@ -11,7 +11,7 @@ export function Header() {
               Eligibility Finder
             </p>
             <p className="text-xs font-medium uppercase tracking-[0.3em] text-brand-muted">
-              Clarity from complexity
+              Tools for people seeking shelter, food, and support
             </p>
           </div>
         </Link>
