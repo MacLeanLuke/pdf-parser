@@ -42,10 +42,14 @@ export const eligibilitySchema = z.object({
   locationConstraints: z.array(z.string().trim().min(1)).default([]),
   maxStayDays: z.number().int().nonnegative().nullable().default(null),
   ageRange: z
-    .object({
-      min: z.number().int().nonnegative().nullable().default(null),
-      max: z.number().int().nonnegative().nullable().default(null),
-    })
+    .union([
+      z.object({
+        min: z.number().int().nonnegative().nullable().default(null),
+        max: z.number().int().nonnegative().nullable().default(null),
+      }),
+      z.null(),
+    ])
+    .transform((value) => value ?? { min: null, max: null })
     .default({ min: null, max: null }),
   notes: z.string().default(""),
 });
