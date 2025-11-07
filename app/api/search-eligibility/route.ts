@@ -12,7 +12,9 @@ import { and, desc, ilike, or, sql } from "drizzle-orm";
 
 export const runtime = "nodejs";
 
-const MODEL_NAME = process.env.OPENAI_MODEL ?? "gpt-4.1-mini";
+const MODEL_NAME =
+  (process.env.OPENAI_MODEL && process.env.OPENAI_MODEL.trim()) ||
+  "gpt-4.1-mini";
 
 type SearchResult = {
   id: string;

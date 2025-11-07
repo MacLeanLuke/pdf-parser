@@ -2,7 +2,8 @@ import { generateObject } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { eligibilitySchema, eligibilitySystemPrompt } from "./eligibility-schema";
 
-const MODEL_NAME = process.env.OPENAI_MODEL ?? "gpt-4.1";
+const MODEL_NAME =
+  (process.env.OPENAI_MODEL && process.env.OPENAI_MODEL.trim()) || "gpt-4.1";
 
 export type EligibilitySourceType = "pdf" | "web";
 
