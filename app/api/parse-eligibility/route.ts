@@ -86,16 +86,32 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
-    return NextResponse.json({
+    const createdAt =
+      typeof record.createdAt === "string"
+        ? record.createdAt
+        : record.createdAt?.toISOString() ?? null;
+
+    const sourceType =
+      record.sourceType === "web" ? ("web" as const) : ("pdf" as const);
+
+    const detail = {
       id: record.id,
-      sourceType: record.sourceType,
+      sourceType,
       sourceUrl: record.sourceUrl,
       pageTitle: record.pageTitle,
       programName: record.programName,
       rawEligibilityText: record.rawEligibilityText,
       eligibility,
-      createdAt: record.createdAt,
+      createdAt,
       rawTextSnippet,
+    };
+
+    const service = createServiceSummary(detail);
+
+    return NextResponse.json({
+      ...detail,
+      record: detail,
+      service,
     });
   } catch (error) {
     console.error("Failed to parse eligibility PDF", error);
@@ -112,4 +128,24 @@ function createSnippet(text: string, maxLength: number) {
   }
 
   return `${text.slice(0, maxLength)}…`;
+}
+
+function createServiceSummary(record: {
+  id: string;
+  programName: string | null;
+  sourceType: "pdf" | "web";
+  sourceUrl: string | null;
+  pageTitle: string | null;
+  createdAt: string | null;
+  rawEligibilityText: string;
+}) {
+  return {
+    id: record.id,
+    programName: record.programName,
+    sourceType: record.sourceType,
+    sourceUrl: record.sourceUrl,
+    pageTitle: record.pageTitle,
+    createdAt: record.createdAt,
+    previewEligibilityText: createSnippet(record.rawEligibilityText, 220),
+  };
 }

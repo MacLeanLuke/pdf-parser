@@ -11,7 +11,7 @@ export function Header() {
               Mercy Networks
             </p>
             <p className="text-xs font-medium uppercase tracking-[0.3em] text-brand-muted">
-              Connecting people and programs through compassion
+              Connecting people and programs
             </p>
           </div>
         </Link>
@@ -29,14 +29,7 @@ export function Header() {
             className="inline-flex items-center gap-1 rounded-full px-3 py-2 transition hover:bg-brand-background hover:text-brand-heading"
           >
             <FileText className="h-4 w-4" aria-hidden="true" />
-            Saved Services
-          </Link>
-          <Link
-            href="mailto:support@mercynetworks.com"
-            className="inline-flex items-center gap-1 rounded-full px-3 py-2 transition hover:bg-brand-background hover:text-brand-heading"
-          >
-            <HelpCircle className="h-4 w-4" aria-hidden="true" />
-            Help & Support
+            Services
           </Link>
         </nav>
       </div>

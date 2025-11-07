@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateObject } from "ai";
 import { openai } from "@ai-sdk/openai";
+import { z } from "zod";
 import {
   searchFilterSchema,
   searchInterpretationPrompt,
@@ -12,7 +13,9 @@ import { and, desc, ilike, or, sql } from "drizzle-orm";
 
 export const runtime = "nodejs";
 
-const MODEL_NAME = process.env.OPENAI_MODEL ?? "gpt-4.1-mini";
+const MODEL_NAME =
+  (process.env.OPENAI_MODEL && process.env.OPENAI_MODEL.trim()) ||
+  "gpt-4.1-mini";
 
 type SearchResult = {
   id: string;
@@ -34,6 +37,8 @@ type SearchResponseItem = {
   previewEligibilityText: string;
 };
 
+const partialFilterSchema = searchFilterSchema.partial();
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => null);
@@ -54,7 +59,9 @@ export async function POST(request: NextRequest) {
         ? Math.min(body.limit, 50)
         : 20;
 
-    const filters = await interpretQuery(query);
+    const filtersOverride = parseFiltersOverride(body?.filtersOverride, query);
+
+    const filters = filtersOverride ?? (await interpretQuery(query));
 
     const records = await searchDatabase(filters, limit * 3);
     const results = rankResults(records, filters, query).slice(0, limit);
@@ -84,15 +91,7 @@ async function interpretQuery(query: string): Promise<SearchFilter> {
       ],
     });
 
-    const cleaned: SearchFilter = {
-      ...object,
-      textQuery:
-        object.textQuery && object.textQuery.trim().length > 0
-          ? object.textQuery.trim()
-          : query,
-    };
-
-    return cleaned;
+    return normalizeFilters(object, query);
   } catch (error) {
     console.warn("Falling back to simple search filter", error);
     return {
@@ -242,6 +241,46 @@ function rankResults(
     createdAt: record.createdAt,
     previewEligibilityText: createSnippet(record.rawEligibilityText, 220),
   }));
+}
+
+function parseFiltersOverride(
+  value: unknown,
+  fallbackQuery: string,
+): SearchFilter | null {
+  const parsed = partialFilterSchema.safeParse(value);
+  if (!parsed.success) {
+    return null;
+  }
+  return normalizeFilters(parsed.data, fallbackQuery);
+}
+
+function normalizeFilters(
+  input: Partial<z.infer<typeof searchFilterSchema>>,
+  query: string,
+): SearchFilter {
+  const list = (value?: string[]) =>
+    Array.isArray(value)
+      ? value
+          .map((item) => item.trim())
+          .filter((item) => item.length > 0)
+      : [];
+
+  const text =
+    typeof input.textQuery === "string" && input.textQuery.trim().length > 0
+      ? input.textQuery.trim()
+      : query;
+
+  return {
+    textQuery: text,
+    populations: list(input.populations),
+    genderRestriction:
+      typeof input.genderRestriction === "string" &&
+      input.genderRestriction.trim().length > 0
+        ? input.genderRestriction.trim()
+        : null,
+    locations: list(input.locations),
+    requirementsInclude: list(input.requirementsInclude),
+  };
 }
 
 function createSnippet(text: string, length: number) {
