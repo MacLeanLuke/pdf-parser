@@ -1,14 +1,20 @@
 import { sql } from "drizzle-orm";
 import {
   bigint,
+  customType,
   jsonb,
   pgTable,
   text,
   timestamp,
-  tsvector,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+
+const tsvector = customType<{ data: string }>({
+  dataType() {
+    return "tsvector";
+  },
+});
 
 export const eligibilityDocuments = pgTable("eligibility_documents", {
   id: uuid("id").defaultRandom().primaryKey(),
