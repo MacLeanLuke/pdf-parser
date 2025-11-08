@@ -32,7 +32,7 @@ export async function tryExtractEligibilityInBrowser(
   );
 
   try {
-    const { object } = await provider.generateObject({
+    const { object } = await provider.generateObject<Eligibility>({
       schema: eligibilitySchema,
       messages: [
         { role: "system", content: eligibilitySystemPrompt },

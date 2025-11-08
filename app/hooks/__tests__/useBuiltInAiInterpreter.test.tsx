@@ -27,7 +27,7 @@ describe("useBuiltInAiInterpreter", () => {
 
     await waitFor(() => expect(result.current.status).toBe("ready"));
 
-    let filters = null;
+    let filters;
     await act(async () => {
       filters = await result.current.interpret(
         "Families needing shelter in Dallas County",
@@ -49,12 +49,12 @@ describe("useBuiltInAiInterpreter", () => {
 
     await waitFor(() => expect(result.current.status).toBe("unavailable"));
 
-    let filters = null;
+    let filters;
     await act(async () => {
       filters = await result.current.interpret("any query");
     });
 
-    expect(filters).toBeNull();
+    expect(filters).toBeUndefined();
     expect(result.current.lastRun).toBe("fallback");
   });
 
@@ -67,7 +67,7 @@ describe("useBuiltInAiInterpreter", () => {
 
     await act(async () => {
       const value = await result.current.interpret("test query");
-      expect(value).toBeNull();
+      expect(value).toBeUndefined();
     });
 
     expect(result.current.lastRun).toBe("fallback");

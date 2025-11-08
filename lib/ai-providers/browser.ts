@@ -1,10 +1,10 @@
 "use client";
 
-import { generateObject, type CoreMessage } from "ai";
+import { generateObject, type CoreMessage, type LanguageModelV1 } from "ai";
 import { z } from "zod";
 
 export type BrowserGenerateObjectOptions<T> = {
-  schema: z.ZodType<T>;
+  schema: z.ZodType<T, z.ZodTypeDef, any>;
   messages: CoreMessage[];
 };
 
@@ -23,7 +23,7 @@ export type BrowserAiProviderState =
     }
   | { status: "unavailable"; reason: string };
 
-type CommunityFactory = ((options?: { model?: string }) => unknown) | null;
+type CommunityFactory = ((options?: { model?: string }) => LanguageModelV1) | null;
 
 let cachedProvider: BrowserAiReadyProvider | null = null;
 let communityFactory: CommunityFactory | undefined;
@@ -169,7 +169,7 @@ async function ensureCommunityFactory(): Promise<CommunityFactory> {
     communityFactory = null;
   }
 
-  return communityFactory;
+  return communityFactory ?? null;
 }
 
 function formatMessages(messages: CoreMessage[]) {

@@ -28,7 +28,7 @@ type HookState = {
   statusMessage: string | null;
   lastError: string | null;
   lastRun: ChromeInterpreterRun;
-  interpret: (query: string) => Promise<SearchFilter | null>;
+  interpret: (query: string) => Promise<SearchFilter | undefined>;
   refresh: () => Promise<void>;
   requestAccess: () => Promise<void>;
 };
@@ -142,7 +142,7 @@ export function useBuiltInAiInterpreter(): HookState {
       const provider = providerRef.current;
       if (!provider) {
         setLastRun("fallback");
-        return null;
+        return undefined;
       }
 
       const trimmed = query.slice(0, MAX_QUERY_LENGTH);
@@ -172,7 +172,7 @@ export function useBuiltInAiInterpreter(): HookState {
           status: "error",
           reason: message.slice(0, 120),
         });
-        return null;
+        return undefined;
       }
     },
     [],
