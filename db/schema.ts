@@ -5,6 +5,7 @@ import {
   pgTable,
   text,
   timestamp,
+  tsvector,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -29,6 +30,13 @@ export const eligibilityDocuments = pgTable("eligibility_documents", {
   sourceType: text("source_type").notNull().default("pdf"),
   sourceUrl: text("source_url"),
   pageTitle: text("page_title"),
+  locationCity: text("location_city"),
+  locationCounty: text("location_county"),
+  locationState: text("location_state"),
+  searchText: text("search_text").notNull().default(""),
+  searchTsv: tsvector("search_tsv")
+    .generatedAlwaysAs(sql`to_tsvector('english', search_text)`)
+    .stored(),
 });
 
 export type EligibilityDocument = typeof eligibilityDocuments.$inferSelect;
