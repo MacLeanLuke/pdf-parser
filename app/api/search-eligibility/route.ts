@@ -1,21 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateObject } from "ai";
-import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 import {
   searchFilterSchema,
   searchInterpretationPrompt,
+  normalizeSearchFilters,
   type SearchFilter,
 } from "@/lib/search-filter";
 import { db } from "@/db";
 import { eligibilityDocuments } from "@/db/schema";
 import { and, desc, ilike, or, sql } from "drizzle-orm";
+import { createServerAiProvider } from "@/lib/ai-providers";
 
 export const runtime = "nodejs";
 
+const serverAi = createServerAiProvider({ fallbackModel: "gpt-4.1-mini" });
+
 const MODEL_NAME =
   (process.env.OPENAI_MODEL && process.env.OPENAI_MODEL.trim()) ||
-  "gpt-4.1-mini";
+  serverAi.defaultModel;
 
 type SearchResult = {
   id: string;
@@ -82,8 +84,10 @@ export async function POST(request: NextRequest) {
 
 async function interpretQuery(query: string): Promise<SearchFilter> {
   try {
-    const { object } = await generateObject({
-      model: openai(MODEL_NAME),
+    serverAi.ensureConfigured();
+
+    const { object } = await serverAi.generateObject({
+      model: serverAi.getModel(MODEL_NAME),
       schema: searchFilterSchema,
       messages: [
         { role: "system", content: searchInterpretationPrompt },
@@ -91,7 +95,7 @@ async function interpretQuery(query: string): Promise<SearchFilter> {
       ],
     });
 
-    return normalizeFilters(object, query);
+    return normalizeSearchFilters(object, query);
   } catch (error) {
     console.warn("Falling back to simple search filter", error);
     return {
@@ -251,36 +255,7 @@ function parseFiltersOverride(
   if (!parsed.success) {
     return null;
   }
-  return normalizeFilters(parsed.data, fallbackQuery);
-}
-
-function normalizeFilters(
-  input: Partial<z.infer<typeof searchFilterSchema>>,
-  query: string,
-): SearchFilter {
-  const list = (value?: string[]) =>
-    Array.isArray(value)
-      ? value
-          .map((item) => item.trim())
-          .filter((item) => item.length > 0)
-      : [];
-
-  const text =
-    typeof input.textQuery === "string" && input.textQuery.trim().length > 0
-      ? input.textQuery.trim()
-      : query;
-
-  return {
-    textQuery: text,
-    populations: list(input.populations),
-    genderRestriction:
-      typeof input.genderRestriction === "string" &&
-      input.genderRestriction.trim().length > 0
-        ? input.genderRestriction.trim()
-        : null,
-    locations: list(input.locations),
-    requirementsInclude: list(input.requirementsInclude),
-  };
+  return normalizeSearchFilters(parsed.data, fallbackQuery);
 }
 
 function createSnippet(text: string, length: number) {

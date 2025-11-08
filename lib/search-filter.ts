@@ -19,3 +19,32 @@ export const searchInterpretationPrompt = `You are an assistant helping casework
 - requirementsInclude: array of important requirements or conditions (e.g., "low barrier", "no sobriety requirement", "accepts teen boys", "income limit").
 
 If the user does not mention a field, leave it empty (for arrays) or null (for genderRestriction). Base everything only on the query text.`;
+
+export function normalizeSearchFilters(
+  input: Partial<z.infer<typeof searchFilterSchema>>,
+  query: string,
+): SearchFilter {
+  const list = (value?: string[]) =>
+    Array.isArray(value)
+      ? value
+          .map((item) => item.trim())
+          .filter((item) => item.length > 0)
+      : [];
+
+  const text =
+    typeof input.textQuery === "string" && input.textQuery.trim().length > 0
+      ? input.textQuery.trim()
+      : query;
+
+  return {
+    textQuery: text,
+    populations: list(input.populations),
+    genderRestriction:
+      typeof input.genderRestriction === "string" &&
+      input.genderRestriction.trim().length > 0
+        ? input.genderRestriction.trim()
+        : null,
+    locations: list(input.locations),
+    requirementsInclude: list(input.requirementsInclude),
+  };
+}

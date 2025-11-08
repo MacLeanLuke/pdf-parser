@@ -1,16 +1,19 @@
 "use client";
 
-import { useState, type ChangeEvent, type ReactNode } from "react";
+import { useCallback, useMemo, useState, type ChangeEvent, type ReactNode } from "react";
 import {
   ArrowRight,
   ExternalLink,
   FileText,
   Globe,
   Loader2,
+  Lock,
   Search,
+  ShieldAlert,
   Sparkles,
   X,
 } from "lucide-react";
+import { track } from "@vercel/analytics/react";
 import SearchBar from "@/components/search-bar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +22,8 @@ import { Input } from "@/components/ui/input";
 import EligibilityResult from "@/components/eligibility-result";
 import type { SearchFilter } from "@/lib/search-filter";
 import type { Eligibility } from "@/lib/eligibility-schema";
+import { useBuiltInAiInterpreter } from "@/app/hooks/useBuiltInAiInterpreter";
+import { tryExtractEligibilityInBrowser } from "@/lib/eligibility-extractor.browser";
 
 type ServiceSummary = {
   id: string;
@@ -63,6 +68,10 @@ type IngestPayload = {
   summary: ServiceSummary;
 };
 
+const BROWSER_EXTRACTION_ENABLED =
+  process.env.NEXT_PUBLIC_ENABLE_BROWSER_EXTRACTION === "true";
+const MAX_BROWSER_HTML_LENGTH = 20_000;
+
 export default function Home() {
   const [query, setQuery] = useState("");
   const [searchStatus, setSearchStatus] = useState<SearchStatus>("idle");
@@ -75,6 +84,9 @@ export default function Home() {
   const [highlightedServiceId, setHighlightedServiceId] = useState<string | null>(
     null,
   );
+  const [localIngestPlaceholder, setLocalIngestPlaceholder] = useState<
+    { id: string; url: string } | null
+  >(null);
 
   const [webSearchQuery, setWebSearchQuery] = useState("");
   const [webResults, setWebResults] = useState<WebResult[]>([]);
@@ -101,6 +113,7 @@ export default function Home() {
   const [pdfError, setPdfError] = useState<string | null>(null);
 
   const [filterDraft, setFilterDraft] = useState<SearchFilter | null>(null);
+  const builtInInterpreter = useBuiltInAiInterpreter();
 
   const hasSearched = searchStatus !== "idle";
   const noServices = searchStatus === "success" && services.length === 0;
@@ -130,13 +143,18 @@ export default function Home() {
     setHighlightedServiceId(null);
 
     try {
+      let derivedFilters = filtersOverride;
+      if (!derivedFilters) {
+        derivedFilters = await builtInInterpreter.interpret(trimmed);
+      }
+
       const response = await fetch("/api/search-eligibility", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           query: trimmed,
           limit: 20,
-          filtersOverride,
+          filtersOverride: derivedFilters,
         }),
       });
 
@@ -247,6 +265,139 @@ export default function Home() {
     }
   };
 
+  const attemptBrowserEligibilityFromUrl = useCallback(
+    async (url: string, options?: { preview?: boolean }) => {
+      if (!BROWSER_EXTRACTION_ENABLED) {
+        return null;
+      }
+
+      try {
+        // Ensure the URL is valid before making any requests.
+        const normalizedUrl = new URL(url).toString();
+        const response = await fetch(normalizedUrl, {
+          method: "GET",
+          credentials: "omit",
+        });
+
+        if (!response.ok) {
+          track("chrome_ai_browser_extraction", {
+            status: "http_error",
+            reason: String(response.status),
+          });
+          return null;
+        }
+
+        const contentType = response.headers.get("content-type") ?? "";
+        if (!contentType.includes("text")) {
+          track("chrome_ai_browser_extraction", {
+            status: "skipped",
+            reason: "unsupported_content_type",
+          });
+          return null;
+        }
+
+        const rawHtml = await response.text();
+        const pageTitle = extractTitleFromHtml(rawHtml);
+        const text = extractVisibleTextFromHtml(rawHtml).slice(
+          0,
+          MAX_BROWSER_HTML_LENGTH,
+        );
+
+        if (!text) {
+          track("chrome_ai_browser_extraction", {
+            status: "skipped",
+            reason: "empty_text",
+          });
+          return null;
+        }
+
+        const eligibility = await tryExtractEligibilityInBrowser({
+          text,
+          sourceType: "web",
+          metadata: {
+            url: normalizedUrl,
+            title: pageTitle,
+          },
+          requestAccess: true,
+        });
+
+        if (!eligibility) {
+          track("chrome_ai_browser_extraction", {
+            status: "failed",
+            reason: "model_unavailable",
+          });
+          return null;
+        }
+
+        const id =
+          typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+            ? `local-${crypto.randomUUID()}`
+            : `local-${Date.now().toString(36)}`;
+
+        const record: EligibilityRecordDetail = {
+          id,
+          programName: eligibility.programName,
+          sourceType: "web",
+          sourceUrl: normalizedUrl,
+          pageTitle: pageTitle ?? null,
+          rawEligibilityText: eligibility.rawEligibilityText,
+          rawTextSnippet: eligibility.rawEligibilityText,
+          eligibility,
+          createdAt: new Date().toISOString(),
+        };
+
+        const summary: ServiceSummary = {
+          id,
+          programName: record.programName,
+          sourceType: record.sourceType,
+          sourceUrl: record.sourceUrl,
+          pageTitle: record.pageTitle,
+          createdAt: record.createdAt,
+          previewEligibilityText: snippet(record.rawEligibilityText, 220),
+        };
+
+        if (options?.preview) {
+          setScanRecord(record);
+          track("chrome_ai_browser_extraction", {
+            status: "success",
+            mode: "preview",
+          });
+          return { record, summary };
+        }
+
+        setServices((prev) => {
+          const filtered = prev.filter((service) => service.id !== summary.id);
+          return [summary, ...filtered];
+        });
+        setHighlightedServiceId(summary.id);
+        setSelectedRecord(record);
+        setScanRecord(null);
+        setSearchStatus("success");
+        setLocalIngestPlaceholder({ id: summary.id, url: normalizedUrl });
+        track("chrome_ai_browser_extraction", {
+          status: "success",
+          mode: "ingest",
+        });
+        return { record, summary };
+      } catch (error) {
+        console.warn("Browser eligibility extraction failed", error);
+        track("chrome_ai_browser_extraction", {
+          status: "error",
+          reason: error instanceof Error ? error.name : "unknown",
+        });
+        return null;
+      }
+    },
+    [
+      setHighlightedServiceId,
+      setLocalIngestPlaceholder,
+      setScanRecord,
+      setSearchStatus,
+      setSelectedRecord,
+      setServices,
+    ],
+  );
+
   const handleFiltersChange = (nextFilters: SearchFilter) => {
     void executeSearch(nextFilters.textQuery || query, nextFilters);
   };
@@ -301,10 +452,22 @@ export default function Home() {
     const payload = await response.json();
     const { record, summary } = normalizeIngestPayload(payload);
 
+    const matchesPlaceholder =
+      localIngestPlaceholder &&
+      urlsMatch(localIngestPlaceholder.url, summary.sourceUrl ?? url);
+
     setServices((prev) => {
-      const filtered = prev.filter((service) => service.id !== summary.id);
+      const withoutPlaceholder = matchesPlaceholder
+        ? prev.filter((service) => service.id !== localIngestPlaceholder!.id)
+        : prev;
+      const filtered = withoutPlaceholder.filter(
+        (service) => service.id !== summary.id,
+      );
       return [summary, ...filtered];
     });
+    if (matchesPlaceholder) {
+      setLocalIngestPlaceholder(null);
+    }
     setHighlightedServiceId(summary.id);
     setSelectedRecord(record);
 
@@ -321,17 +484,32 @@ export default function Home() {
     if (!selectedWebResult) return;
     setScanStatus("loading");
     setScanError(null);
+    let localPreview = false;
+    try {
+      const preview = await attemptBrowserEligibilityFromUrl(
+        selectedWebResult.url,
+        { preview: true },
+      );
+      localPreview = Boolean(preview);
+    } catch (error) {
+      console.warn("Local preview failed", error);
+    }
+
     try {
       await ingestFromUrl(selectedWebResult.url, { preview: true });
       setScanStatus("success");
     } catch (error) {
       console.error("Website ingest failed", error);
-      setScanStatus("error");
-      setScanError(
-        error instanceof Error
-          ? error.message
-          : "Unable to analyze the selected website.",
-      );
+      if (!localPreview) {
+        setScanStatus("error");
+        setScanError(
+          error instanceof Error
+            ? error.message
+            : "Unable to analyze the selected website.",
+        );
+      } else {
+        setScanStatus("success");
+      }
     }
   };
 
@@ -351,16 +529,25 @@ export default function Home() {
 
     setManualWebsiteLoading(true);
     setManualWebsiteError(null);
+    let localPreview = false;
+    try {
+      const local = await attemptBrowserEligibilityFromUrl(trimmed);
+      localPreview = Boolean(local);
+    } catch (error) {
+      console.warn("Browser extraction for manual URL failed", error);
+    }
     try {
       await ingestFromUrl(trimmed);
       setManualWebsiteUrl("");
     } catch (error) {
       console.error("Manual website ingest failed", error);
-      setManualWebsiteError(
-        error instanceof Error
-          ? error.message
-          : "Unable to analyze the provided URL.",
-      );
+      if (!localPreview) {
+        setManualWebsiteError(
+          error instanceof Error
+            ? error.message
+            : "Unable to analyze the provided URL.",
+        );
+      }
     } finally {
       setManualWebsiteLoading(false);
     }
@@ -440,6 +627,15 @@ export default function Home() {
         onSubmit={handleSearch}
         isLoading={searchStatus === "loading"}
         showAdvanced={false}
+      />
+
+      <ChromeAiStatus
+        status={builtInInterpreter.status}
+        message={builtInInterpreter.statusMessage}
+        lastRun={builtInInterpreter.lastRun}
+        onRetry={builtInInterpreter.refresh}
+        onRequestAccess={builtInInterpreter.requestAccess}
+        lastError={builtInInterpreter.lastError}
       />
 
       {searchStatus === "error" && searchError && (
@@ -558,6 +754,111 @@ export default function Home() {
           </h2>
           <EligibilityResult record={selectedRecord} />
         </div>
+      )}
+    </div>
+  );
+}
+
+type ChromeAiStatusProps = {
+  status: ReturnType<typeof useBuiltInAiInterpreter>["status"];
+  message: string | null;
+  lastRun: ReturnType<typeof useBuiltInAiInterpreter>["lastRun"];
+  onRetry: () => Promise<void>;
+  onRequestAccess: () => Promise<void>;
+  lastError: string | null;
+};
+
+function ChromeAiStatus({
+  status,
+  message,
+  lastRun,
+  onRetry,
+  onRequestAccess,
+  lastError,
+}: ChromeAiStatusProps) {
+  const { badgeVariant, label, icon: Icon } = useMemo(() => {
+    switch (status) {
+      case "ready":
+        return { badgeVariant: "success" as const, label: "Chrome AI ready", icon: Sparkles };
+      case "permission-required":
+        return {
+          badgeVariant: "warning" as const,
+          label: "Chrome AI locked",
+          icon: Lock,
+        };
+      case "unavailable":
+        return {
+          badgeVariant: "slate" as const,
+          label: "Chrome AI unavailable",
+          icon: ShieldAlert,
+        };
+      case "error":
+        return {
+          badgeVariant: "warning" as const,
+          label: "Chrome AI error",
+          icon: ShieldAlert,
+        };
+      default:
+        return {
+          badgeVariant: "slate" as const,
+          label: "Checking Chrome AI…",
+          icon: Loader2,
+        };
+    }
+  }, [status]);
+
+  const action = useMemo(() => {
+    if (status === "permission-required") {
+      return { label: "Enable", handler: onRequestAccess };
+    }
+    if (status === "unavailable") {
+      return { label: "Retry", handler: onRetry };
+    }
+    return null;
+  }, [onRequestAccess, onRetry, status]);
+
+  const infoText = useMemo(() => {
+    if (lastError) {
+      return lastError;
+    }
+    if (message) {
+      return message;
+    }
+    if (lastRun === "fallback") {
+      return "Using server interpretation for now.";
+    }
+    return null;
+  }, [lastError, lastRun, message]);
+
+  const shouldRender = status !== "ready" || infoText || lastRun === "fallback";
+  if (!shouldRender) {
+    return null;
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-3 text-sm text-brand-muted">
+      <Badge variant={badgeVariant} className="flex items-center gap-2">
+        <Icon
+          className={
+            status === "checking"
+              ? "h-3.5 w-3.5 animate-spin"
+              : "h-3.5 w-3.5"
+          }
+          aria-hidden="true"
+        />
+        {label}
+      </Badge>
+      {infoText && <span>{infoText}</span>}
+      {action && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            void action.handler();
+          }}
+        >
+          {action.label}
+        </Button>
       )}
     </div>
   );
@@ -1240,6 +1541,37 @@ function normalizeIngestPayload(payload: any): IngestPayload {
   };
 
   return { record, summary };
+}
+
+function urlsMatch(a: string, b: string) {
+  try {
+    const first = new URL(a);
+    const second = new URL(b);
+    return first.origin === second.origin && first.pathname === second.pathname;
+  } catch {
+    return a === b;
+  }
+}
+
+function extractTitleFromHtml(html: string) {
+  if (typeof window === "undefined" || typeof DOMParser === "undefined") {
+    return null;
+  }
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  const title = doc.querySelector("title");
+  return title?.textContent?.trim() || null;
+}
+
+function extractVisibleTextFromHtml(html: string) {
+  if (typeof window === "undefined" || typeof DOMParser === "undefined") {
+    return html;
+  }
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  doc.querySelectorAll("script, style, noscript").forEach((node) => node.remove());
+  const text = doc.body?.textContent ?? "";
+  return text.replace(/\s+/g, " ").trim();
 }
 
 function snippet(text: string, length: number) {
